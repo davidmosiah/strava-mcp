@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Strava MCP Unofficial - Local-first Strava data for AI agents</title>
+  <meta name="description" content="Unofficial local-first Strava MCP server for AI agents. Connect activities, routes, streams, training load and performance context through read-only OAuth.">
+  <meta name="author" content="David Mosiah">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="keywords" content="Strava MCP, Strava API, Model Context Protocol, AI agents, Claude Desktop, Cursor, running, cycling, training load, activity streams, route privacy">
+  <meta name="theme-color" content="#080806">
+  <meta property="og:title" content="Strava MCP Unofficial">
+  <meta property="og:description" content="Turn Strava activities, routes and streams into agent-ready training decisions. Unofficial, open source, local-first.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Strava MCP Unofficial">
+  <meta property="og:url" content="https://stravamcp.vercel.app/">
+  <meta property="og:image" content="https://stravamcp.vercel.app/assets/og-card.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Strava MCP Unofficial">
+  <meta name="twitter:description" content="Local-first, read-only Strava data for AI agents through the official OAuth API.">
+  <meta name="twitter:image" content="https://stravamcp.vercel.app/assets/og-card.png">
+  <link rel="canonical" href="https://stravamcp.vercel.app/">
+  <link rel="alternate" href="https://davidmosiah.github.io/strava-mcp/">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {"@type":"WebSite","@id":"https://stravamcp.vercel.app/#website","url":"https://stravamcp.vercel.app/","name":"Strava MCP Unofficial","description":"Unofficial local-first Strava MCP server for AI agents.","publisher":{"@id":"https://github.com/davidmosiah#person"}},
+      {"@type":"Person","@id":"https://github.com/davidmosiah#person","name":"David Mosiah","url":"https://github.com/davidmosiah"},
+      {"@type":"SoftwareSourceCode","@id":"https://github.com/davidmosiah/strava-mcp#source","name":"Strava MCP Unofficial","codeRepository":"https://github.com/davidmosiah/strava-mcp","url":"https://stravamcp.vercel.app/","programmingLanguage":"TypeScript","runtimePlatform":"Node.js","license":"https://github.com/davidmosiah/strava-mcp/blob/main/LICENSE","applicationCategory":"DeveloperApplication","description":"Unofficial MCP server that connects AI agents to user-authorized Strava activities, routes, streams and training context through the official OAuth API.","author":{"@id":"https://github.com/davidmosiah#person"},"isAccessibleForFree":true,"sameAs":["https://www.npmjs.com/package/strava-mcp-unofficial","https://davidmosiah.github.io/strava-mcp/"]},
+      {"@type":"FAQPage","@id":"https://stravamcp.vercel.app/#faq-schema","mainEntity":[
+        {"@type":"Question","name":"Does Strava MCP fetch raw sensor data?","acceptedAnswer":{"@type":"Answer","text":"It can fetch Strava activity streams for recorded activities when available, such as heartrate, cadence, watts, altitude and GPS. It does not provide continuous 24/7 raw device telemetry."}},
+        {"@type":"Question","name":"Where do Strava secrets live?","acceptedAnswer":{"@type":"Answer","text":"Strava credentials and OAuth tokens stay on the user's machine under ~/.strava-mcp/. MCP tools intentionally do not return OAuth token values."}},
+        {"@type":"Question","name":"Is GPS returned by default?","acceptedAnswer":{"@type":"Answer","text":"No. Summary mode removes GPS/map fields and structured mode limits geometry. Raw GPS streams require explicit include_gps=true or privacy_mode=raw."}}
+      ]}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="topo" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Strava MCP Unofficial home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span><strong>Strava MCP</strong><small>Unofficial bridge for training agents</small></span>
+    </a>
+    <nav class="nav" aria-label="Primary navigation">
+      <a href="#why">Why</a>
+      <a href="#data">Data</a>
+      <a href="#setup">Setup</a>
+      <a href="#tools">Tools</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#agents">Agents</a>
+      <a class="nav-pill" href="https://github.com/davidmosiah/strava-mcp">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow">stravamcp.vercel.app · open source · unofficial</p>
+        <h1><span>Turn every activity</span><span>into agent-ready signal.</span></h1>
+        <p class="hero-text">Strava MCP is a local-first bridge that lets AI assistants reason about runs, rides, routes, streams, heart rate, power, elevation and weekly load without handing them your tokens or exposing GPS by accident.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#setup">Install in 3 commands</a>
+          <a class="button secondary" href="#agents">Give this to your agent</a>
+        </div>
+        <div class="hero-command">
+          <code>npx -y strava-mcp-unofficial setup</code>
+          <button type="button" data-copy="npx -y strava-mcp-unofficial setup&#10;npx -y strava-mcp-unofficial auth&#10;npx -y strava-mcp-unofficial doctor">Copy install flow</button>
+        </div>
+        <ul class="hero-proof" aria-label="Project highlights">
+          <li><strong>20 tools</strong><span>activities, streams, routes, stats</span></li>
+          <li><strong>5 resources</strong><span>agent-readable context</span></li>
+          <li><strong>0 write scopes</strong><span>read-only by default</span></li>
+          <li><strong>GPS guarded</strong><span>raw lat/lng is explicit</span></li>
+        </ul>
+      </div>
+      <aside class="cinema-card" aria-label="Cinematic Strava training interface">
+        <img src="assets/hero-cinematic.svg" alt="Cinematic route and training dashboard showing Strava data flowing into an AI agent">
+      </aside>
+    </section>
+
+    <section class="notice" aria-label="Unofficial project notice">
+      <strong>Unofficial.</strong><span>This project is not affiliated with, endorsed by, sponsored by, or supported by Strava, Inc. Use it only with your own account and the official Strava OAuth flow.</span>
+    </section>
+
+    <section class="launch-strip" aria-label="Project links">
+      <a href="https://stravamcp.vercel.app"><span>Primary site</span><strong>stravamcp.vercel.app</strong></a>
+      <a href="https://github.com/davidmosiah/strava-mcp"><span>Source</span><strong>GitHub repo</strong></a>
+      <a href="https://www.npmjs.com/package/strava-mcp-unofficial"><span>Install</span><strong>npm package</strong></a>
+      <a href="https://davidmosiah.github.io/strava-mcp/"><span>Mirror</span><strong>GitHub Pages</strong></a>
+    </section>
+
+    <section class="story-section" id="why">
+      <div class="section-head"><p class="eyebrow">The product idea</p><h2>From workout log to training intelligence.</h2><p class="section-lede">Charts tell you what happened. Agents can help decide what to do next: push, consolidate, change route, protect recovery or investigate intensity drift.</p></div>
+      <div class="story-grid">
+        <article class="story-card"><span>01</span><h3>Read the effort</h3><p>Activities, streams, zones, routes, clubs and gear come from your authorized Strava account.</p></article>
+        <article class="story-card"><span>02</span><h3>Protect location</h3><p>GPS is useful but sensitive. Summary and structured modes avoid raw route geometry unless you explicitly ask.</p></article>
+        <article class="story-card"><span>03</span><h3>Choose the next move</h3><p>Your assistant can convert load, distance, elevation, HR and power into practical training decisions.</p></article>
+      </div>
+    </section>
+
+    <section class="story-section" id="data">
+      <div class="section-head"><p class="eyebrow">Data boundary</p><h2>Clear about what Strava exposes.</h2><p class="section-lede">This bridge uses the official Strava API v3. It can read activity streams when Strava provides them, but it does not claim continuous sensor telemetry.</p></div>
+      <div class="story-grid">
+        <article class="story-card yes"><span>Yes</span><h3>Activities and streams</h3><p>Runs, rides, swims, distance, moving time, elevation, HR, power, cadence, zones and recorded activity streams.</p></article>
+        <article class="story-card raw"><span>Raw</span><h3>Upstream API payloads</h3><p><code>privacy_mode=raw</code> returns supported Strava endpoint JSON. GPS streams require explicit intent.</p></article>
+        <article class="story-card no"><span>No</span><h3>No 24/7 telemetry</h3><p>Strava activity streams are tied to recorded activities, not continuous wearable telemetry outside workouts.</p></article>
+      </div>
+    </section>
+
+    <section class="architecture-section">
+      <div><p class="eyebrow">Local-first architecture</p><h2>Designed for trust before scale.</h2><p class="section-lede">OAuth stays official, tokens stay local, and MCP tools expose clear contracts for agents instead of scraped or ambiguous data.</p><div class="architecture-points"><article><strong>Official API boundary</strong><span>No private Strava endpoints or hidden scraping.</span></article><article><strong>Agent-readable contracts</strong><span><code>strava_capabilities</code> explains tools, limits and privacy modes.</span></article><article><strong>Training workflows</strong><span>Daily and weekly summaries turn activities into decisions.</span></article></div></div>
+      <figure class="architecture-visual"><img src="assets/signal-architecture.svg" alt="Architecture diagram showing Strava OAuth through a local MCP server into AI agents"></figure>
+    </section>
+
+    <section class="setup-section" id="setup">
+      <div class="section-head"><p class="eyebrow">Guided setup</p><h2>Install it without becoming a developer.</h2><p class="section-lede">Create a Strava app, run three commands, then paste one MCP config into your AI client.</p></div>
+      <div class="path-grid"><article class="path-card"><span>Path A</span><h3>I am a human</h3><p>Create a Strava API app, paste credentials into setup, authorize once in the browser, then run doctor.</p></article><article class="path-card agent-path"><span>Path B</span><h3>I want my agent to help</h3><p>Copy the delegation prompt below. It tells your assistant exactly what to install and what not to expose.</p><a href="#agents">Jump to agent prompt</a></article></div>
+      <div class="setup-flow">
+        <article class="setup-card"><div class="setup-topline">Step 1</div><h3>Create your Strava app</h3><p>Open Strava API settings and use a local callback.</p><div class="copy-list"><div><span>Redirect URI</span><code>http://127.0.0.1:3000/callback</code><button type="button" data-copy="http://127.0.0.1:3000/callback">Copy</button></div><div><span>Read scopes</span><code>read activity:read_all profile:read_all</code><button type="button" data-copy="read activity:read_all profile:read_all">Copy</button></div></div><a class="text-link" href="https://www.strava.com/settings/api" target="_blank" rel="noreferrer">Open Strava API Settings</a></article>
+        <article class="setup-card command-card"><div class="setup-topline">Step 2</div><h3>Authorize locally</h3><p>The CLI collects credentials, opens Strava in your browser and stores tokens locally.</p><div class="terminal"><button type="button" data-copy="npx -y strava-mcp-unofficial setup&#10;npx -y strava-mcp-unofficial auth&#10;npx -y strava-mcp-unofficial doctor">Copy commands</button><pre><code>npx -y strava-mcp-unofficial setup
+npx -y strava-mcp-unofficial auth
+npx -y strava-mcp-unofficial doctor</code></pre></div></article>
+        <article class="setup-card"><div class="setup-topline">Step 3</div><h3>Connect your AI assistant</h3><p>Use it with Claude Desktop, Cursor, Windsurf, Hermes, OpenClaw or any MCP-over-stdio client.</p><details class="config-details"><summary>Show MCP config</summary><div class="terminal"><button type="button" data-copy='{ "mcpServers": { "strava": { "command": "npx", "args": ["-y", "strava-mcp-unofficial"] } } }'>Copy config</button><pre><code>{
+  "mcpServers": {
+    "strava": {
+      "command": "npx",
+      "args": ["-y", "strava-mcp-unofficial"]
+    }
+  }
+}</code></pre></div></details></article>
+      </div>
+    </section>
+
+    <section class="story-section" id="tools">
+      <div class="section-head"><p class="eyebrow">Toolbelt</p><h2>Built for agents that need decisions, not screenshots.</h2><p class="section-lede">Start broad with summaries, then drill into a specific activity, stream, route or zone only when it matters.</p></div>
+      <div class="tool-grid"><article><strong>Activities</strong><span>list, details, zones, streams</span></article><article><strong>Training summaries</strong><span>daily and weekly load reviews</span></article><article><strong>Routes</strong><span>route metadata with GPS caution</span></article><article><strong>Athlete</strong><span>profile, stats, HR/power zones</span></article><article><strong>Context</strong><span>clubs and gear</span></article><article><strong>Safety</strong><span>status, audit, cache, revoke</span></article></div>
+    </section>
+
+    <section class="privacy-section" id="privacy">
+      <div class="privacy-copy"><p class="eyebrow">Trust boundary</p><h2>GPS is treated like a secret.</h2><p>Routes can reveal home, work, habits and routines. This MCP is designed so agents get useful training context without seeing OAuth tokens or raw coordinates by accident.</p></div>
+      <div class="privacy-grid"><article><strong>Read-only default</strong><p>No upload/write scope in the default install.</p></article><article><strong>Local tokens</strong><p>Tokens live under <code>~/.strava-mcp/</code> with user-only permissions.</p></article><article><strong>GPS guarded</strong><p>Raw lat/lng streams require explicit opt-in.</p></article><article><strong>No medical advice</strong><p>Training context, not diagnosis or treatment.</p></article></div>
+    </section>
+
+    <section class="agent-section" id="agents">
+      <div class="agent-panel"><div><p class="eyebrow">For AI agents</p><h2>A delegation prompt that does not guess.</h2><p>Give this to an assistant when a non-technical user wants help installing the bridge safely.</p></div><div class="terminal"><button type="button" data-copy="Install the unofficial Strava MCP server for me. Repository: https://github.com/davidmosiah/strava-mcp. Help me create a Strava API app with redirect URI http://127.0.0.1:3000/callback and read-only scopes read activity:read_all profile:read_all. Then run setup, auth and doctor with npx -y strava-mcp-unofficial. Add the MCP config to my client and verify the connection. Keep tokens local, never print secrets, and do not request raw GPS unless I explicitly ask.">Copy agent prompt</button><pre><code>Install the unofficial Strava MCP server for me.
+Repository: https://github.com/davidmosiah/strava-mcp
+
+Help me create a Strava API app with:
+- Redirect URI: http://127.0.0.1:3000/callback
+- Read-only scopes: read activity:read_all profile:read_all
+
+Run setup, auth and doctor with npx.
+Add the MCP config to my client.
+Keep tokens local and never print secrets.
+Do not request raw GPS unless I explicitly ask.</code></pre></div></div>
+    </section>
+
+    <section class="closing"><div><p class="eyebrow">Open source training agents</p><h2>Make AI assistants better at respecting the route, the load and the body.</h2><p>Star the repo, inspect the implementation, open issues or adapt the bridge for your own agent workflow.</p></div><div class="closing-actions"><a class="button primary" href="https://github.com/davidmosiah/strava-mcp">Open GitHub</a><a class="button secondary" href="https://www.npmjs.com/package/strava-mcp-unofficial">npm package</a><a class="button secondary" href="quickstart.md">Quickstart</a></div></section>
+  </main>
+
+  <footer class="footer"><p><strong>Strava MCP Unofficial</strong> by <a href="https://github.com/davidmosiah">David Mosiah</a>. MIT licensed.</p><p>Strava is a trademark of its respective owner. This project is not affiliated with, endorsed by, or sponsored by Strava, Inc.</p></footer>
+  <script src="assets/site.js" defer></script>
+</body>
+</html>
