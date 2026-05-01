@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Strava MCP Unofficial - Local-first Strava data for AI agents</title>
-  <meta name="description" content="Unofficial local-first Strava MCP server for AI agents. Connect activities, routes, streams, training load and performance context through read-only OAuth.">
+  <meta name="description" content="Unofficial local-first Strava MCP server for AI agents. Connect activities, routes, streams, training load and performance context through scope-aware read-only OAuth.">
   <meta name="author" content="David Mosiah">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="keywords" content="Strava MCP, Strava API, Model Context Protocol, AI agents, Claude Desktop, Cursor, running, cycling, training load, activity streams, route privacy">
@@ -79,7 +79,7 @@
           <li><strong>20 tools</strong><span>activities, streams, routes, stats</span></li>
           <li><strong>5 resources</strong><span>agent-readable context</span></li>
           <li><strong>0 write scopes</strong><span>read-only by default</span></li>
-          <li><strong>GPS guarded</strong><span>raw lat/lng is explicit</span></li>
+          <li><strong>Scope-aware</strong><span>doctor catches weak tokens</span></li>
         </ul>
       </div>
       <aside class="cinema-card" aria-label="Cinematic Strava training interface">
@@ -126,10 +126,10 @@
       <div class="path-grid"><article class="path-card"><span>Path A</span><h3>I am a human</h3><p>Create a Strava API app, paste credentials into setup, authorize once in the browser, then run doctor.</p></article><article class="path-card agent-path"><span>Path B</span><h3>I want my agent to help</h3><p>Copy the delegation prompt below. It tells your assistant exactly what to install and what not to expose.</p><a href="#agents">Jump to agent prompt</a></article></div>
       <div class="setup-flow">
         <article class="setup-card"><div class="setup-topline">Step 1</div><h3>Create your Strava app</h3><p>Open Strava API settings and use a local callback.</p><div class="copy-list"><div><span>Redirect URI</span><code>http://127.0.0.1:3000/callback</code><button type="button" data-copy="http://127.0.0.1:3000/callback">Copy</button></div><div><span>Read scopes</span><code>read activity:read_all profile:read_all</code><button type="button" data-copy="read activity:read_all profile:read_all">Copy</button></div></div><a class="text-link" href="https://www.strava.com/settings/api" target="_blank" rel="noreferrer">Open Strava API Settings</a></article>
-        <article class="setup-card command-card"><div class="setup-topline">Step 2</div><h3>Authorize locally</h3><p>The CLI collects credentials, opens Strava in your browser and stores tokens locally.</p><div class="terminal"><button type="button" data-copy="npx -y strava-mcp-unofficial setup&#10;npx -y strava-mcp-unofficial auth&#10;npx -y strava-mcp-unofficial doctor">Copy commands</button><pre><code>npx -y strava-mcp-unofficial setup
+        <article class="setup-card command-card"><div class="setup-topline">Step 2</div><h3>Authorize locally</h3><p>The CLI collects credentials, opens Strava in your browser and stores tokens locally. <code>doctor</code> now verifies the token has <code>activity:read_all profile:read_all read</code> before agents start calling activity tools.</p><div class="terminal"><button type="button" data-copy="npx -y strava-mcp-unofficial setup&#10;npx -y strava-mcp-unofficial auth&#10;npx -y strava-mcp-unofficial doctor">Copy commands</button><pre><code>npx -y strava-mcp-unofficial setup
 npx -y strava-mcp-unofficial auth
 npx -y strava-mcp-unofficial doctor</code></pre></div></article>
-        <article class="setup-card"><div class="setup-topline">Step 3</div><h3>Connect your AI assistant</h3><p>Use it with Claude Desktop, Cursor, Windsurf, Hermes, OpenClaw or any MCP-over-stdio client.</p><details class="config-details"><summary>Show MCP config</summary><div class="terminal"><button type="button" data-copy='{ "mcpServers": { "strava": { "command": "npx", "args": ["-y", "strava-mcp-unofficial"] } } }'>Copy config</button><pre><code>{
+        <article class="setup-card"><div class="setup-topline">Step 3</div><h3>Connect your AI assistant</h3><p>Use it with Claude Desktop, Cursor, Windsurf, Hermes, OpenClaw or any MCP-over-stdio client.</p><p class="doctor-note">Server installs can run the same package: keep config in <code>~/.strava-mcp/config.json</code>, tokens in <code>~/.strava-mcp/tokens.json</code>, then verify with <code>hermes mcp test strava</code>.</p><details class="config-details"><summary>Show MCP config</summary><div class="terminal"><button type="button" data-copy='{ "mcpServers": { "strava": { "command": "npx", "args": ["-y", "strava-mcp-unofficial"] } } }'>Copy config</button><pre><code>{
   "mcpServers": {
     "strava": {
       "command": "npx",
@@ -151,7 +151,7 @@ npx -y strava-mcp-unofficial doctor</code></pre></div></article>
     </section>
 
     <section class="agent-section" id="agents">
-      <div class="agent-panel"><div><p class="eyebrow">For AI agents</p><h2>A delegation prompt that does not guess.</h2><p>Give this to an assistant when a non-technical user wants help installing the bridge safely.</p></div><div class="terminal"><button type="button" data-copy="Install the unofficial Strava MCP server for me. Repository: https://github.com/davidmosiah/strava-mcp. Help me create a Strava API app with redirect URI http://127.0.0.1:3000/callback and read-only scopes read activity:read_all profile:read_all. Then run setup, auth and doctor with npx -y strava-mcp-unofficial. Add the MCP config to my client and verify the connection. Keep tokens local, never print secrets, and do not request raw GPS unless I explicitly ask.">Copy agent prompt</button><pre><code>Install the unofficial Strava MCP server for me.
+      <div class="agent-panel"><div><p class="eyebrow">For AI agents</p><h2>A delegation prompt that does not guess.</h2><p>Give this to an assistant when a non-technical user wants help installing the bridge safely.</p></div><div class="terminal"><button type="button" data-copy="Install the unofficial Strava MCP server for me. Repository: https://github.com/davidmosiah/strava-mcp. Help me create a Strava API app with redirect URI http://127.0.0.1:3000/callback and read-only scopes read activity:read_all profile:read_all. Then run setup, auth and doctor with npx -y strava-mcp-unofficial. Doctor must confirm oauth.scope_status is ok and no missing_recommended_scopes remain. Add the MCP config to my client and verify the connection. Keep tokens local, never print secrets, and do not request raw GPS unless I explicitly ask.">Copy agent prompt</button><pre><code>Install the unofficial Strava MCP server for me.
 Repository: https://github.com/davidmosiah/strava-mcp
 
 Help me create a Strava API app with:
@@ -159,6 +159,7 @@ Help me create a Strava API app with:
 - Read-only scopes: read activity:read_all profile:read_all
 
 Run setup, auth and doctor with npx.
+Doctor must confirm oauth.scope_status is ok.
 Add the MCP config to my client.
 Keep tokens local and never print secrets.
 Do not request raw GPS unless I explicitly ask.</code></pre></div></div>
