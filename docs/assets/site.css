@@ -140,6 +140,7 @@ code { color: #ffd090; font-size: .9em; overflow-wrap: anywhere; }
 .terminal button { position: absolute; top: .8rem; right: .8rem; z-index: 1; }
 pre { margin: 0; padding: 3.65rem 1.25rem 1.25rem; overflow-x: auto; color: #fff2d2; font-size: .9rem; line-height: 1.65; }
 .config-details summary { color: var(--orange); cursor: pointer; font-weight: 900; }
+.doctor-note { margin-top: 1rem; padding: .95rem 1rem; border: 1px solid rgba(110,231,255,.24); border-radius: 16px; background: rgba(110,231,255,.075); color: var(--soft); }
 .tool-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .tool-grid strong,.tool-grid span { display: block; }
 .tool-grid span { margin-top: .45rem; color: var(--soft); }

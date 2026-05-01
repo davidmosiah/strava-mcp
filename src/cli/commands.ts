@@ -51,6 +51,13 @@ function printDoctor(status: Awaited<ReturnType<typeof buildConnectionStatus>>):
     console.log(`- Token permissions: ${status.token.secure_permissions === false ? "insecure" : "ok"}`);
     console.log(`- Refresh token: ${status.token.has_refresh_token ? "present" : "missing"}`);
   }
+  console.log(`- OAuth scopes: ${status.oauth.scope_status}`);
+  if (status.oauth.granted_scopes.length > 0) {
+    console.log(`  granted: ${status.oauth.granted_scopes.join(" ")}`);
+  }
+  if (status.oauth.missing_recommended_scopes.length > 0) {
+    console.log(`  missing recommended: ${status.oauth.missing_recommended_scopes.join(" ")}`);
+  }
   console.log(`- Privacy mode: ${status.privacy_mode}`);
   console.log(`- Cache: ${status.cache.enabled ? `enabled at ${status.cache.path}` : "disabled"}`);
   console.log("");

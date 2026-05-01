@@ -162,7 +162,15 @@ export const ConnectionStatusOutputSchema = z.object({
   redirect_uri: z.string().optional(),
   automatic_auth_supported: z.boolean(),
   config: z.object({ source: z.enum(["env", "local_config", "mixed", "missing"]), path: z.string(), exists: z.boolean(), secure_permissions: z.boolean().optional(), error: z.string().optional() }).strict(),
-  token: z.object({ path: z.string(), exists: z.boolean(), readable: z.boolean(), permissions: z.string().optional(), secure_permissions: z.boolean().optional(), expires_at: z.number().optional(), expired: z.boolean().optional(), has_refresh_token: z.boolean().optional(), error: z.string().optional() }).strict(),
+  token: z.object({ path: z.string(), exists: z.boolean(), readable: z.boolean(), permissions: z.string().optional(), secure_permissions: z.boolean().optional(), expires_at: z.number().optional(), expired: z.boolean().optional(), has_refresh_token: z.boolean().optional(), scope: z.string().optional(), error: z.string().optional() }).strict(),
+  oauth: z.object({
+    recommended_scopes: z.array(z.string()),
+    granted_scopes: z.array(z.string()),
+    missing_recommended_scopes: z.array(z.string()),
+    scope_status: z.enum(["ok", "missing_recommended", "unknown", "missing_token"]),
+    activity_tools_ready: z.boolean(),
+    profile_tools_ready: z.boolean()
+  }).strict(),
   cache: z.object({ enabled: z.boolean(), path: z.string() }).strict(),
   next_steps: z.array(z.string())
 }).strict();

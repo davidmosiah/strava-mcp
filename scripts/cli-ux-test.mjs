@@ -19,7 +19,8 @@ try {
   writeFileSync(tokenPath, JSON.stringify({
     access_token: 'access',
     refresh_token: 'refresh',
-    expires_at: 2_000_000
+    expires_at: 2_000_000,
+    scope: 'activity:read_all profile:read_all read'
   }), { mode: 0o600 });
 
   const ready = await buildConnectionStatus({
@@ -41,6 +42,7 @@ try {
   assert.equal(ready.token.exists, true);
   assert.equal(ready.token.secure_permissions, true);
   assert.equal(ready.token.has_refresh_token, true);
+  assert.equal(ready.oauth.scope_status, 'ok');
 
   assert.deepEqual(parseLocalRedirectUri('http://127.0.0.1:4567/callback'), {
     host: '127.0.0.1',
@@ -118,6 +120,7 @@ try {
   const savedConfig = JSON.parse(readFileSync(configPath, 'utf8'));
   assert.equal(savedConfig.STRAVA_CLIENT_ID, 'client-id-from-setup');
   assert.equal(savedConfig.STRAVA_CLIENT_SECRET, 'client-secret-from-setup');
+  assert.equal(savedConfig.STRAVA_SCOPES, 'read activity:read_all profile:read_all');
   assert.equal(savedConfig.STRAVA_PRIVACY_MODE, 'summary');
   assert.equal(savedConfig.STRAVA_CACHE, 'sqlite');
 

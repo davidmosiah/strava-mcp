@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { createInterface as createCallbackInterface } from "node:readline";
 import { createInterface as createPromptInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { DEFAULT_SCOPES } from "../constants.js";
 import { writeLocalConfig, type LocalStravaConfig } from "../services/local-config.js";
 import { runAuthCommand } from "./auth.js";
 
@@ -29,6 +30,7 @@ export async function runSetupCommand(args: string[]): Promise<number> {
     STRAVA_CLIENT_ID: options.clientId,
     STRAVA_CLIENT_SECRET: options.clientSecret,
     STRAVA_REDIRECT_URI: options.redirectUri,
+    STRAVA_SCOPES: DEFAULT_SCOPES.join(" "),
     STRAVA_PRIVACY_MODE: options.privacyMode
   };
   if (options.cache) config.STRAVA_CACHE = options.cache;

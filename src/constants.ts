@@ -1,5 +1,5 @@
 export const SERVER_NAME = "strava-mcp-server";
-export const SERVER_VERSION = "0.1.0";
+export const SERVER_VERSION = "0.1.1";
 
 export const STRAVA_API_BASE_URL = "https://www.strava.com/api/v3";
 export const STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize";

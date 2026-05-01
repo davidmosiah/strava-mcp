@@ -17,6 +17,7 @@ Built by [David Mosiah](https://github.com/davidmosiah) for people building prac
 `strava-mcp-server` exposes Strava to MCP-compatible agents with a privacy-first local setup:
 
 - OAuth setup, auth and `doctor` CLI for non-technical users.
+- OAuth scope diagnostics: `doctor` detects limited tokens before agents hit permission errors.
 - Activity history: runs, rides, swims, walks, workouts and sport metadata.
 - Activity details: distance, moving time, elevation, heart rate, power, relative effort and gear.
 - Activity streams: time, distance, altitude, cadence, watts, heartrate and optional GPS lat/lng.
@@ -36,6 +37,18 @@ npx -y strava-mcp-unofficial auth
 npx -y strava-mcp-unofficial doctor
 ```
 
+`doctor` should report the recommended scopes as granted:
+
+```text
+read activity:read_all profile:read_all
+```
+
+If you only see `read`, re-run:
+
+```bash
+npx -y strava-mcp-unofficial auth
+```
+
 For MCP clients, use the package without a subcommand so it starts the stdio server:
 
 ```json
@@ -48,6 +61,19 @@ For MCP clients, use the package without a subcommand so it starts the stdio ser
   }
 }
 ```
+
+## Hermes / Server Install
+
+On a remote Hermes server, keep secrets out of chat and MCP client config when possible:
+
+```bash
+npx -y strava-mcp-unofficial setup --client hermes --no-auth
+npx -y strava-mcp-unofficial auth
+npx -y strava-mcp-unofficial doctor
+hermes mcp test strava
+```
+
+If the browser OAuth flow must happen on your local machine, run `auth` locally, then copy only `~/.strava-mcp/tokens.json` to the server with `chmod 600`. The token must include `activity:read_all profile:read_all read` for activity history and streams.
 
 ## Create A Strava App
 

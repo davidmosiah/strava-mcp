@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { DEFAULT_SCOPES } from "../constants.js";
 import type { PrivacyMode, StravaTokenSet } from "../types.js";
 import { loadConfigSources } from "./local-config.js";
 
@@ -40,7 +41,16 @@ export interface ConnectionStatus extends Record<string, unknown> {
     expires_at?: number;
     expired?: boolean;
     has_refresh_token?: boolean;
+    scope?: string;
     error?: string;
+  };
+  oauth: {
+    recommended_scopes: string[];
+    granted_scopes: string[];
+    missing_recommended_scopes: string[];
+    scope_status: "ok" | "missing_recommended" | "unknown" | "missing_token";
+    activity_tools_ready: boolean;
+    profile_tools_ready: boolean;
   };
   cache: {
     enabled: boolean;
@@ -63,10 +73,11 @@ export async function buildConnectionStatus(options: ConnectionStatusOptions = {
   const requiredEnv = Object.fromEntries(REQUIRED_ENV.map((name) => [name, Boolean(value(name as keyof typeof sources.values))]));
   const missingEnv = REQUIRED_ENV.filter((name) => !requiredEnv[name]);
   const token = await inspectToken(tokenPath, nowSeconds);
+  const oauth = buildOAuthScopeStatus(token);
   const nodeSupported = Number(process.versions.node.split(".")[0] ?? 0) >= 20;
   const automaticAuthSupported = Boolean(redirectUri && isLocalHttpRedirect(redirectUri));
   const tokenUsable = token.exists && token.readable && token.secure_permissions !== false && (token.expired !== true || token.has_refresh_token === true);
-  const ready = missingEnv.length === 0 && tokenUsable;
+  const ready = missingEnv.length === 0 && tokenUsable && oauth.scope_status !== "missing_recommended";
   const ok = ready && nodeSupported;
 
   return {
@@ -89,11 +100,12 @@ export async function buildConnectionStatus(options: ConnectionStatusOptions = {
       error: sources.local.error
     },
     token,
+    oauth,
     cache: {
       enabled: parseBool(value("STRAVA_CACHE")),
       path: cachePath
     },
-    next_steps: buildNextSteps({ missingEnv, token, nodeSupported, automaticAuthSupported, redirectUri })
+    next_steps: buildNextSteps({ missingEnv, token, nodeSupported, automaticAuthSupported, redirectUri, oauth })
   };
 }
 
@@ -130,7 +142,8 @@ async function inspectToken(path: string, nowSeconds: number): Promise<Connectio
       secure_permissions: securePermissions,
       expires_at: expiresAt,
       expired: expiresAt ? expiresAt <= nowSeconds : undefined,
-      has_refresh_token: typeof token.refresh_token === "string" && token.refresh_token.length > 0
+      has_refresh_token: typeof token.refresh_token === "string" && token.refresh_token.length > 0,
+      scope: typeof token.scope === "string" ? token.scope : undefined
     };
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
@@ -139,12 +152,54 @@ async function inspectToken(path: string, nowSeconds: number): Promise<Connectio
   }
 }
 
+function buildOAuthScopeStatus(token: ConnectionStatus["token"]): ConnectionStatus["oauth"] {
+  if (!token.exists || !token.readable) {
+    return {
+      recommended_scopes: DEFAULT_SCOPES,
+      granted_scopes: [],
+      missing_recommended_scopes: DEFAULT_SCOPES,
+      scope_status: "missing_token",
+      activity_tools_ready: false,
+      profile_tools_ready: false
+    };
+  }
+
+  const grantedScopes = parseScopes(token.scope);
+  if (grantedScopes.length === 0) {
+    return {
+      recommended_scopes: DEFAULT_SCOPES,
+      granted_scopes: [],
+      missing_recommended_scopes: [],
+      scope_status: "unknown",
+      activity_tools_ready: false,
+      profile_tools_ready: false
+    };
+  }
+
+  const granted = new Set(grantedScopes);
+  const missingRecommendedScopes = DEFAULT_SCOPES.filter((scope) => !granted.has(scope));
+  return {
+    recommended_scopes: DEFAULT_SCOPES,
+    granted_scopes: grantedScopes,
+    missing_recommended_scopes: missingRecommendedScopes,
+    scope_status: missingRecommendedScopes.length === 0 ? "ok" : "missing_recommended",
+    activity_tools_ready: granted.has("activity:read_all") || granted.has("activity:read"),
+    profile_tools_ready: granted.has("profile:read_all") || granted.has("read")
+  };
+}
+
+function parseScopes(scope: string | undefined): string[] {
+  if (!scope) return [];
+  return Array.from(new Set(scope.split(/[,\s]+/).map((value) => value.trim()).filter(Boolean))).sort();
+}
+
 function buildNextSteps(input: {
   missingEnv: string[];
   token: ConnectionStatus["token"];
   nodeSupported: boolean;
   automaticAuthSupported: boolean;
   redirectUri?: string;
+  oauth: ConnectionStatus["oauth"];
 }): string[] {
   const steps: string[] = [];
   if (!input.nodeSupported) steps.push("Install Node.js 20 or newer.");
@@ -162,6 +217,11 @@ function buildNextSteps(input: {
     steps.push(`Restrict token file permissions with: chmod 600 ${input.token.path}`);
   } else if (input.token.expired && !input.token.has_refresh_token) {
     steps.push("Re-authorize with `strava-mcp-server auth`; the current token is expired and has no refresh token.");
+  }
+  if (input.oauth.scope_status === "missing_recommended") {
+    steps.push(`Re-authorize with \`strava-mcp-server auth\` to grant recommended scopes: ${input.oauth.missing_recommended_scopes.join(" ")}.`);
+  } else if (input.oauth.scope_status === "unknown" && input.token.exists && input.token.readable) {
+    steps.push("Token scope is not recorded locally. If activity or stream tools fail with permission errors, re-authorize with `strava-mcp-server auth`.");
   }
   if (steps.length === 0) steps.push("Ready. Add this MCP server to your agent and start with strava_daily_summary.");
   return steps;

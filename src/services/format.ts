@@ -23,13 +23,16 @@ export function bulletList(title: string, fields: Record<string, unknown>): stri
   const lines = [`# ${title}`, ""];
   for (const [key, value] of Object.entries(fields)) {
     if (value === undefined || value === null) continue;
-    lines.push(`- **${key}**: ${String(value)}`);
+    lines.push(`- **${key}**: ${formatMarkdownValue(value)}`);
   }
   return lines.join("\n");
 }
 
 export function formatCollection(title: string, records: unknown[], meta: Record<string, unknown>): string {
-  const lines = [`# ${title}`, "", ...Object.entries(meta).map(([k, v]) => `- **${k}**: ${String(v)}`), ""];
+  const metaLines = Object.entries(meta)
+    .filter(([key, value]) => key !== "records" && value !== undefined && value !== null)
+    .map(([key, value]) => `- **${key}**: ${formatMarkdownValue(value)}`);
+  const lines = [`# ${title}`, "", ...metaLines, ""];
   const preview = records.slice(0, 8);
   for (const [index, record] of preview.entries()) {
     if (record && typeof record === "object") {
@@ -51,4 +54,20 @@ export function formatCollection(title: string, records: unknown[], meta: Record
   }
   if (records.length > preview.length) lines.push(`... ${records.length - preview.length} more records omitted from markdown preview.`);
   return lines.join("\n");
+}
+
+function formatMarkdownValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return String(value);
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "none";
+    if (value.every((item) => item === null || ["string", "number", "boolean"].includes(typeof item))) {
+      return value.map((item) => String(item)).join(", ");
+    }
+    return `${value.length} item${value.length === 1 ? "" : "s"}`;
+  }
+  if (value && typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
 }
