@@ -16,7 +16,13 @@ Important boundaries:
 - Not medical advice.
 
 Recommended first tools:
-1. strava_capabilities
-2. strava_connection_status
-3. strava_daily_summary
-4. strava_weekly_summary
+1. strava_agent_manifest
+2. strava_capabilities
+3. strava_connection_status
+4. strava_daily_summary
+5. strava_weekly_summary
+
+Hermes-specific:
+- Use direct MCP tools such as mcp_strava_strava_connection_status, mcp_strava_strava_daily_summary and mcp_strava_strava_weekly_summary when available.
+- After MCP config changes, use /reload-mcp or hermes mcp test strava.
+- Do not restart the Hermes gateway for normal Strava MCP data access.

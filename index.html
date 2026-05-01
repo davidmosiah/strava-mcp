@@ -7,7 +7,7 @@
   <meta name="description" content="Unofficial local-first Strava MCP server for AI agents. Connect activities, routes, streams, training load and performance context through scope-aware read-only OAuth.">
   <meta name="author" content="David Mosiah">
   <meta name="robots" content="index, follow, max-image-preview:large">
-  <meta name="keywords" content="Strava MCP, Strava API, Model Context Protocol, AI agents, Claude Desktop, Cursor, running, cycling, training load, activity streams, route privacy">
+  <meta name="keywords" content="Strava MCP, Strava API, Model Context Protocol, AI agents, Claude Desktop, Cursor, Hermes, OpenClaw, running, cycling, training load, activity streams, route privacy">
   <meta name="theme-color" content="#080806">
   <meta property="og:title" content="Strava MCP Unofficial">
   <meta property="og:description" content="Turn Strava activities, routes and streams into agent-ready training decisions. Unofficial, open source, local-first.">
@@ -34,7 +34,8 @@
       {"@type":"FAQPage","@id":"https://stravamcp.vercel.app/#faq-schema","mainEntity":[
         {"@type":"Question","name":"Does Strava MCP fetch raw sensor data?","acceptedAnswer":{"@type":"Answer","text":"It can fetch Strava activity streams for recorded activities when available, such as heartrate, cadence, watts, altitude and GPS. It does not provide continuous 24/7 raw device telemetry."}},
         {"@type":"Question","name":"Where do Strava secrets live?","acceptedAnswer":{"@type":"Answer","text":"Strava credentials and OAuth tokens stay on the user's machine under ~/.strava-mcp/. MCP tools intentionally do not return OAuth token values."}},
-        {"@type":"Question","name":"Is GPS returned by default?","acceptedAnswer":{"@type":"Answer","text":"No. Summary mode removes GPS/map fields and structured mode limits geometry. Raw GPS streams require explicit include_gps=true or privacy_mode=raw."}}
+        {"@type":"Question","name":"Is GPS returned by default?","acceptedAnswer":{"@type":"Answer","text":"No. Summary mode removes GPS/map fields and structured mode limits geometry. Raw GPS streams require explicit include_gps=true or privacy_mode=raw."}},
+        {"@type":"Question","name":"Does it support Hermes agents?","acceptedAnswer":{"@type":"Answer","text":"Yes. setup --client hermes writes a pinned Hermes MCP config and local skill. doctor --client hermes checks the server config and recommends /reload-mcp instead of gateway restarts for normal data access."}}
       ]}
     ]
   }
@@ -76,8 +77,8 @@
           <button type="button" data-copy="npx -y strava-mcp-unofficial setup&#10;npx -y strava-mcp-unofficial auth&#10;npx -y strava-mcp-unofficial doctor">Copy install flow</button>
         </div>
         <ul class="hero-proof" aria-label="Project highlights">
-          <li><strong>20 tools</strong><span>activities, streams, routes, stats</span></li>
-          <li><strong>5 resources</strong><span>agent-readable context</span></li>
+          <li><strong>21 tools</strong><span>activities, streams, routes, stats</span></li>
+          <li><strong>6 resources</strong><span>agent-readable context</span></li>
           <li><strong>0 write scopes</strong><span>read-only by default</span></li>
           <li><strong>Scope-aware</strong><span>doctor catches weak tokens</span></li>
         </ul>
@@ -117,7 +118,7 @@
     </section>
 
     <section class="architecture-section">
-      <div><p class="eyebrow">Local-first architecture</p><h2>Designed for trust before scale.</h2><p class="section-lede">OAuth stays official, tokens stay local, and MCP tools expose clear contracts for agents instead of scraped or ambiguous data.</p><div class="architecture-points"><article><strong>Official API boundary</strong><span>No private Strava endpoints or hidden scraping.</span></article><article><strong>Agent-readable contracts</strong><span><code>strava_capabilities</code> explains tools, limits and privacy modes.</span></article><article><strong>Training workflows</strong><span>Daily and weekly summaries turn activities into decisions.</span></article></div></div>
+      <div><p class="eyebrow">Local-first architecture</p><h2>Designed for trust before scale.</h2><p class="section-lede">OAuth stays official, tokens stay local, and MCP tools expose clear contracts for agents instead of scraped or ambiguous data.</p><div class="architecture-points"><article><strong>Official API boundary</strong><span>No private Strava endpoints or hidden scraping.</span></article><article><strong>Agent-readable contracts</strong><span><code>strava_agent_manifest</code> and <code>strava_capabilities</code> explain tools, limits, clients and privacy modes.</span></article><article><strong>Training workflows</strong><span>Daily and weekly summaries turn activities into decisions.</span></article></div></div>
       <figure class="architecture-visual"><img src="assets/signal-architecture.svg" alt="Architecture diagram showing Strava OAuth through a local MCP server into AI agents"></figure>
     </section>
 
@@ -129,7 +130,7 @@
         <article class="setup-card command-card"><div class="setup-topline">Step 2</div><h3>Authorize locally</h3><p>The CLI collects credentials, opens Strava in your browser and stores tokens locally. <code>doctor</code> now verifies the token has <code>activity:read_all profile:read_all read</code> before agents start calling activity tools.</p><div class="terminal"><button type="button" data-copy="npx -y strava-mcp-unofficial setup&#10;npx -y strava-mcp-unofficial auth&#10;npx -y strava-mcp-unofficial doctor">Copy commands</button><pre><code>npx -y strava-mcp-unofficial setup
 npx -y strava-mcp-unofficial auth
 npx -y strava-mcp-unofficial doctor</code></pre></div></article>
-        <article class="setup-card"><div class="setup-topline">Step 3</div><h3>Connect your AI assistant</h3><p>Use it with Claude Desktop, Cursor, Windsurf, Hermes, OpenClaw or any MCP-over-stdio client.</p><p class="doctor-note">Server installs can run the same package: keep config in <code>~/.strava-mcp/config.json</code>, tokens in <code>~/.strava-mcp/tokens.json</code>, then verify with <code>hermes mcp test strava</code>.</p><details class="config-details"><summary>Show MCP config</summary><div class="terminal"><button type="button" data-copy='{ "mcpServers": { "strava": { "command": "npx", "args": ["-y", "strava-mcp-unofficial"] } } }'>Copy config</button><pre><code>{
+        <article class="setup-card"><div class="setup-topline">Step 3</div><h3>Connect your AI assistant</h3><p>Use it with Claude Desktop, Cursor, Windsurf, Hermes, OpenClaw or any MCP-over-stdio client.</p><p class="doctor-note">Server installs can run <code>setup --client hermes</code>, then verify with <code>doctor --client hermes</code> and <code>hermes mcp test strava</code>. After config changes, use <code>/reload-mcp</code>; no gateway restart is needed for normal data access.</p><details class="config-details"><summary>Show MCP config</summary><div class="terminal"><button type="button" data-copy='{ "mcpServers": { "strava": { "command": "npx", "args": ["-y", "strava-mcp-unofficial"] } } }'>Copy config</button><pre><code>{
   "mcpServers": {
     "strava": {
       "command": "npx",
@@ -142,7 +143,7 @@ npx -y strava-mcp-unofficial doctor</code></pre></div></article>
 
     <section class="story-section" id="tools">
       <div class="section-head"><p class="eyebrow">Toolbelt</p><h2>Built for agents that need decisions, not screenshots.</h2><p class="section-lede">Start broad with summaries, then drill into a specific activity, stream, route or zone only when it matters.</p></div>
-      <div class="tool-grid"><article><strong>Activities</strong><span>list, details, zones, streams</span></article><article><strong>Training summaries</strong><span>daily and weekly load reviews</span></article><article><strong>Routes</strong><span>route metadata with GPS caution</span></article><article><strong>Athlete</strong><span>profile, stats, HR/power zones</span></article><article><strong>Context</strong><span>clubs and gear</span></article><article><strong>Safety</strong><span>status, audit, cache, revoke</span></article></div>
+      <div class="tool-grid"><article><strong>Activities</strong><span>list, details, zones, streams</span></article><article><strong>Training summaries</strong><span>daily and weekly load reviews</span></article><article><strong>Routes</strong><span>route metadata with GPS caution</span></article><article><strong>Athlete</strong><span>profile, stats, HR/power zones</span></article><article><strong>Agent manifest</strong><span>client rules, Hermes aliases, install contract</span></article><article><strong>Safety</strong><span>status, audit, cache, revoke</span></article></div>
     </section>
 
     <section class="privacy-section" id="privacy">
@@ -151,7 +152,7 @@ npx -y strava-mcp-unofficial doctor</code></pre></div></article>
     </section>
 
     <section class="agent-section" id="agents">
-      <div class="agent-panel"><div><p class="eyebrow">For AI agents</p><h2>A delegation prompt that does not guess.</h2><p>Give this to an assistant when a non-technical user wants help installing the bridge safely.</p></div><div class="terminal"><button type="button" data-copy="Install the unofficial Strava MCP server for me. Repository: https://github.com/davidmosiah/strava-mcp. Help me create a Strava API app with redirect URI http://127.0.0.1:3000/callback and read-only scopes read activity:read_all profile:read_all. Then run setup, auth and doctor with npx -y strava-mcp-unofficial. Doctor must confirm oauth.scope_status is ok and no missing_recommended_scopes remain. Add the MCP config to my client and verify the connection. Keep tokens local, never print secrets, and do not request raw GPS unless I explicitly ask.">Copy agent prompt</button><pre><code>Install the unofficial Strava MCP server for me.
+      <div class="agent-panel"><div><p class="eyebrow">For AI agents</p><h2>A delegation prompt that does not guess.</h2><p>Give this to an assistant when a non-technical user wants help installing the bridge safely. Agents should read <code>strava_agent_manifest</code> once connected.</p></div><div class="terminal"><button type="button" data-copy="Install the unofficial Strava MCP server for me. Repository: https://github.com/davidmosiah/strava-mcp. Help me create a Strava API app with redirect URI http://127.0.0.1:3000/callback and read-only scopes read activity:read_all profile:read_all. Then run setup, auth and doctor with npx -y strava-mcp-unofficial. If this is Hermes, use setup --client hermes and doctor --client hermes, then reload MCP with /reload-mcp or hermes mcp test strava. Do not restart the Hermes gateway for normal Strava data access. Doctor must confirm oauth.scope_status is ok and no missing_recommended_scopes remain. Add the MCP config to my client and verify the connection. Keep tokens local, never print secrets, and do not request raw GPS unless I explicitly ask.">Copy agent prompt</button><pre><code>Install the unofficial Strava MCP server for me.
 Repository: https://github.com/davidmosiah/strava-mcp
 
 Help me create a Strava API app with:
@@ -159,6 +160,10 @@ Help me create a Strava API app with:
 - Read-only scopes: read activity:read_all profile:read_all
 
 Run setup, auth and doctor with npx.
+If this is Hermes, use setup --client hermes
+and doctor --client hermes.
+Reload MCP with /reload-mcp or hermes mcp test strava.
+Do not restart the Hermes gateway for normal Strava data access.
 Doctor must confirm oauth.scope_status is ok.
 Add the MCP config to my client.
 Keep tokens local and never print secrets.

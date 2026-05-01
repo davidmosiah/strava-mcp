@@ -22,4 +22,8 @@ Not by default. This project is read-only by design. Write/upload tools would ne
 
 ## What should an agent call first?
 
-Start with `strava_capabilities`, then `strava_connection_status`, then `strava_daily_summary` or `strava_weekly_summary`.
+Start with `strava_agent_manifest`, then `strava_connection_status`, then `strava_daily_summary` or `strava_weekly_summary`.
+
+## What should Hermes call?
+
+Hermes often prefixes MCP tools by server name. Use direct tools such as `mcp_strava_strava_connection_status`, `mcp_strava_strava_daily_summary`, and `mcp_strava_strava_weekly_summary`. After config changes, use `/reload-mcp` or `hermes mcp test strava`; do not restart the gateway for normal Strava data access.
