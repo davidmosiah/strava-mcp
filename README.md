@@ -18,6 +18,8 @@ Built by [David Mosiah](https://github.com/davidmosiah) for people building prac
 
 - OAuth setup, auth and `doctor` CLI for non-technical users.
 - OAuth scope diagnostics: `doctor` detects limited tokens before agents hit permission errors.
+- Agent manifest: `strava_agent_manifest` and `strava://agent-manifest` give agents machine-readable install/runtime rules.
+- Hermes-aware setup: `setup --client hermes` writes a pinned MCP config and a local Hermes skill to reduce terminal/gateway friction.
 - Activity history: runs, rides, swims, walks, workouts and sport metadata.
 - Activity details: distance, moving time, elevation, heart rate, power, relative effort and gear.
 - Activity streams: time, distance, altitude, cadence, watts, heartrate and optional GPS lat/lng.
@@ -69,11 +71,21 @@ On a remote Hermes server, keep secrets out of chat and MCP client config when p
 ```bash
 npx -y strava-mcp-unofficial setup --client hermes --no-auth
 npx -y strava-mcp-unofficial auth
-npx -y strava-mcp-unofficial doctor
+npx -y strava-mcp-unofficial doctor --client hermes
 hermes mcp test strava
 ```
 
 If the browser OAuth flow must happen on your local machine, run `auth` locally, then copy only `~/.strava-mcp/tokens.json` to the server with `chmod 600`. The token must include `activity:read_all profile:read_all read` for activity history and streams.
+
+Hermes usually exposes names with its MCP prefix. Common direct tools:
+
+- `mcp_strava_strava_agent_manifest`
+- `mcp_strava_strava_connection_status`
+- `mcp_strava_strava_daily_summary`
+- `mcp_strava_strava_weekly_summary`
+- `mcp_strava_strava_get_activity_streams`
+
+After editing `~/.hermes/config.yaml`, use `/reload-mcp` or `hermes mcp test strava`. Do not restart the Hermes gateway for normal Strava data access.
 
 ## Create A Strava App
 
@@ -118,6 +130,7 @@ export STRAVA_CACHE="sqlite"
 
 Auth and setup:
 
+- `strava_agent_manifest`
 - `strava_get_auth_url`
 - `strava_exchange_code`
 - `strava_revoke_access`
@@ -151,6 +164,7 @@ Workflow tools:
 ## Resources
 
 - `strava://capabilities`
+- `strava://agent-manifest`
 - `strava://athlete`
 - `strava://latest/activity`
 - `strava://summary/daily`

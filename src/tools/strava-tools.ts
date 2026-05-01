@@ -1,12 +1,15 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   ActivityStreamsInputSchema,
+  AgentManifestInputSchema,
+  AgentManifestOutputSchema,
   AuthUrlInputSchema,
   AuthUrlOutputSchema,
   CacheStatusOutputSchema,
   CapabilitiesOutputSchema,
   CollectionInputSchema,
   CollectionOutputSchema,
+  ConnectionStatusInputSchema,
   ConnectionStatusOutputSchema,
   DailySummaryInputSchema,
   EndpointDataOutputSchema,
@@ -21,6 +24,7 @@ import {
   WeeklySummaryInputSchema
 } from "../schemas/common.js";
 import { buildPrivacyAudit } from "../services/audit.js";
+import { buildAgentManifest, formatAgentManifestMarkdown } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
 import { getConfig } from "../services/config.js";
@@ -99,6 +103,21 @@ function registerGetByIdTool(server: McpServer, name: string, title: string, end
 }
 
 export function registerStravaTools(server: McpServer): void {
+  server.registerTool(
+    "strava_agent_manifest",
+    {
+      title: "Strava Agent Manifest",
+      description: "Machine-readable install, runtime and client guidance for AI agents. Includes Hermes direct tool names and anti-gateway-restart guidance. Does not call Strava or expose secrets.",
+      inputSchema: AgentManifestInputSchema.shape,
+      outputSchema: AgentManifestOutputSchema.shape,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+    },
+    async ({ client: targetClient, response_format }) => {
+      const manifest = buildAgentManifest(targetClient);
+      return makeResponse(manifest, response_format, formatAgentManifestMarkdown(manifest));
+    }
+  );
+
   server.registerTool(
     "strava_capabilities",
     {
@@ -276,16 +295,17 @@ export function registerStravaTools(server: McpServer): void {
     "strava_connection_status",
     {
       title: "Strava Connection Status",
-      description: "Check local Strava config, token file, Node version, privacy mode and cache readiness without calling Strava or exposing secrets.",
-      inputSchema: ResponseOnlyInputSchema.shape,
+      description: "Check local Strava config, token file, Node version, privacy mode, cache readiness and optional MCP client readiness without calling Strava or exposing secrets.",
+      inputSchema: ConnectionStatusInputSchema.shape,
       outputSchema: ConnectionStatusOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
     },
-    async ({ response_format }) => {
-      const status = await buildConnectionStatus();
+    async ({ response_format, client: targetClient }) => {
+      const status = await buildConnectionStatus({ client: targetClient });
       return makeResponse(status, response_format, bulletList("Strava Connection Status", {
         ok: status.ok,
         ready_for_strava_api: status.ready_for_strava_api,
+        client: status.client,
         missing_env: status.missing_env.join(", ") || "none",
         scope_status: status.oauth.scope_status,
         granted_scopes: status.oauth.granted_scopes.join(" ") || "unknown",
@@ -294,6 +314,7 @@ export function registerStravaTools(server: McpServer): void {
         token_path: status.token.path,
         token_exists: status.token.exists,
         privacy_mode: status.privacy_mode,
+        client_recommendations: status.client_checks?.hermes?.recommendations.join(" | "),
         next_steps: status.next_steps.join(" | ")
       }));
     }

@@ -1,8 +1,9 @@
 import { promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_SCOPES } from "../constants.js";
+import { DEFAULT_SCOPES, PINNED_NPM_PACKAGE } from "../constants.js";
 import type { PrivacyMode, StravaTokenSet } from "../types.js";
+import { HERMES_DIRECT_TOOLS, type AgentClientName } from "./agent-manifest.js";
 import { loadConfigSources } from "./local-config.js";
 
 type Env = Record<string, string | undefined>;
@@ -11,11 +12,13 @@ export interface ConnectionStatusOptions {
   env?: Env;
   homeDir?: string;
   nowMs?: number;
+  client?: AgentClientName;
 }
 
 export interface ConnectionStatus extends Record<string, unknown> {
   ok: boolean;
   ready_for_strava_api: boolean;
+  client?: AgentClientName;
   node: {
     version: string;
     supported: boolean;
@@ -56,7 +59,24 @@ export interface ConnectionStatus extends Record<string, unknown> {
     enabled: boolean;
     path: string;
   };
+  client_checks?: {
+    hermes?: HermesClientCheck;
+  };
   next_steps: string[];
+}
+
+export interface HermesClientCheck {
+  config_path: string;
+  config_exists: boolean;
+  strava_server_configured: boolean;
+  package_pinned: boolean;
+  mcp_reload_confirmation_disabled?: boolean;
+  skill_path: string;
+  skill_installed: boolean;
+  direct_tool_prefix: string;
+  expected_direct_tools: string[];
+  recommendations: string[];
+  error?: string;
 }
 
 const REQUIRED_ENV = ["STRAVA_CLIENT_ID", "STRAVA_CLIENT_SECRET", "STRAVA_REDIRECT_URI"];
@@ -79,10 +99,12 @@ export async function buildConnectionStatus(options: ConnectionStatusOptions = {
   const tokenUsable = token.exists && token.readable && token.secure_permissions !== false && (token.expired !== true || token.has_refresh_token === true);
   const ready = missingEnv.length === 0 && tokenUsable && oauth.scope_status !== "missing_recommended";
   const ok = ready && nodeSupported;
+  const clientChecks = options.client === "hermes" ? { hermes: await inspectHermesClient(homeDir) } : undefined;
 
   return {
     ok,
     ready_for_strava_api: ready,
+    client: options.client,
     node: {
       version: process.versions.node,
       supported: nodeSupported
@@ -105,6 +127,7 @@ export async function buildConnectionStatus(options: ConnectionStatusOptions = {
       enabled: parseBool(value("STRAVA_CACHE")),
       path: cachePath
     },
+    client_checks: clientChecks,
     next_steps: buildNextSteps({ missingEnv, token, nodeSupported, automaticAuthSupported, redirectUri, oauth })
   };
 }
@@ -150,6 +173,80 @@ async function inspectToken(path: string, nowSeconds: number): Promise<Connectio
     if (code === "ENOENT") return { path, exists: false, readable: false };
     return { path, exists: true, readable: false, error: (error as Error).message };
   }
+}
+
+async function inspectHermesClient(homeDir: string): Promise<HermesClientCheck> {
+  const configPath = join(homeDir, ".hermes", "config.yaml");
+  const skillPath = join(homeDir, ".hermes", "skills", "strava-mcp", "SKILL.md");
+  const base: Omit<HermesClientCheck, "recommendations"> = {
+    config_path: configPath,
+    config_exists: false,
+    strava_server_configured: false,
+    package_pinned: false,
+    skill_path: skillPath,
+    skill_installed: false,
+    direct_tool_prefix: "mcp_strava_",
+    expected_direct_tools: HERMES_DIRECT_TOOLS
+  };
+
+  try {
+    const [config, skillExists] = await Promise.all([
+      readOptionalText(configPath),
+      existsFile(skillPath)
+    ]);
+    const configText = config.text ?? "";
+    const check = {
+      ...base,
+      config_exists: config.exists,
+      strava_server_configured: /strava-mcp-unofficial|strava-mcp-server|strava-mcp/.test(configText) && /^\s*strava\s*:/m.test(configText),
+      package_pinned: /strava-mcp-unofficial@\d+\.\d+\.\d+/.test(configText),
+      mcp_reload_confirmation_disabled: config.exists ? /mcp_reload_confirm\s*:\s*false/.test(configText) : undefined,
+      skill_installed: skillExists
+    };
+    return { ...check, recommendations: buildHermesRecommendations(check) };
+  } catch (error) {
+    const check = { ...base, error: (error as Error).message };
+    return { ...check, recommendations: buildHermesRecommendations(check) };
+  }
+}
+
+async function readOptionalText(path: string): Promise<{ exists: boolean; text?: string }> {
+  try {
+    return { exists: true, text: await fs.readFile(path, "utf8") };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { exists: false };
+    throw error;
+  }
+}
+
+async function existsFile(path: string): Promise<boolean> {
+  try {
+    const stat = await fs.stat(path);
+    return stat.isFile();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+function buildHermesRecommendations(check: Omit<HermesClientCheck, "recommendations">): string[] {
+  const recommendations: string[] = [];
+  if (!check.config_exists) {
+    recommendations.push("Run `strava-mcp-server setup --client hermes --no-auth` to create a Hermes MCP config and local Hermes skill.");
+  } else if (!check.strava_server_configured) {
+    recommendations.push("Add a `strava` MCP server block to `~/.hermes/config.yaml`.");
+  }
+  if (check.config_exists && check.strava_server_configured && !check.package_pinned) {
+    recommendations.push(`Pin the Hermes MCP command to \`${PINNED_NPM_PACKAGE}\` to avoid stale npx cache surprises.`);
+  }
+  if (!check.skill_installed) {
+    recommendations.push("Install the Hermes skill at `~/.hermes/skills/strava-mcp/SKILL.md` so agents prefer direct MCP tools over terminal workarounds.");
+  }
+  if (check.config_exists && check.mcp_reload_confirmation_disabled !== true) {
+    recommendations.push("Optional for lower friction: set `approvals.mcp_reload_confirm: false` if your Hermes policy allows MCP reload without confirmation.");
+  }
+  recommendations.push("After Hermes config changes, use `/reload-mcp` or `hermes mcp test strava`; do not run `hermes gateway restart` for normal Strava data access.");
+  return recommendations;
 }
 
 function buildOAuthScopeStatus(token: ConnectionStatus["token"]): ConnectionStatus["oauth"] {

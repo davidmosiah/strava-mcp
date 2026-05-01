@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { buildAgentManifest } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
 import { getConfig } from "../services/config.js";
 import { applyPrivacy, resolvePrivacyMode } from "../services/privacy.js";
@@ -33,6 +34,17 @@ async function latestActivityResource(uri: URL) {
 }
 
 export function registerStravaResources(server: McpServer): void {
+  server.registerResource(
+    "strava_agent_manifest_resource",
+    "strava://agent-manifest",
+    {
+      title: "Strava Agent Manifest",
+      description: "Static machine-readable install and runtime instructions for AI agents, including Hermes direct tool names.",
+      mimeType: "application/json"
+    },
+    async (uri) => jsonResource(uri, buildAgentManifest("hermes"))
+  );
+
   server.registerResource(
     "strava_capabilities_resource",
     "strava://capabilities",

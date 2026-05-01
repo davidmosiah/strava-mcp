@@ -52,13 +52,29 @@ export function buildCapabilities() {
       }
     ],
     recommended_agent_flow: [
+      "Call strava_agent_manifest when installing or operating inside a server agent such as Hermes.",
       "Call strava_connection_status before calling Strava data tools.",
       "If setup is incomplete, guide the user through setup, auth, and doctor.",
       "Use strava_daily_summary or strava_weekly_summary before low-level activity tools.",
+      "For Hermes, use direct tools such as mcp_strava_strava_connection_status and reload config with /reload-mcp instead of restarting the gateway.",
       "Treat GPS as sensitive; avoid raw route/latlng payloads unless explicitly requested.",
       "Use Strava for training/load context; pair with WHOOP/Garmin/Oura for recovery and sleep physiology.",
       "Avoid medical diagnosis; frame outputs as training, route, recovery-context and performance planning."
     ],
+    client_aliases: {
+      hermes: {
+        tool_prefix: "mcp_strava_",
+        direct_tools: [
+          "mcp_strava_strava_agent_manifest",
+          "mcp_strava_strava_connection_status",
+          "mcp_strava_strava_daily_summary",
+          "mcp_strava_strava_weekly_summary",
+          "mcp_strava_strava_get_activity_streams"
+        ],
+        reload_command: "/reload-mcp",
+        gateway_restart_required_for_data_access: false
+      }
+    },
     contribution_paths: [
       "Improve setup UX for non-technical athletes.",
       "Add more MCP client examples.",

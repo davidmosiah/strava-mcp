@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { DEFAULT_LIMIT, DEFAULT_MAX_PAGES, MAX_PAGES, MAX_STRAVA_LIMIT } from "../constants.js";
+import { AGENT_CLIENTS } from "../services/agent-manifest.js";
 
 export const ResponseFormatSchema = z.enum(["markdown", "json"]).default("markdown");
+export const AgentClientSchema = z.enum(AGENT_CLIENTS).default("generic");
 export const PrivacyModeValueSchema = z.enum(["summary", "structured", "raw"]);
 export const PrivacyModeSchema = PrivacyModeValueSchema.optional()
   .describe("Optional per-call privacy override. Defaults to STRAVA_PRIVACY_MODE or structured. raw returns upstream Strava JSON. summary removes GPS/map details.");
@@ -46,6 +48,16 @@ export const SimpleReadInputSchema = z.object({
 }).strict();
 
 export const ResponseOnlyInputSchema = z.object({
+  response_format: ResponseFormatSchema
+}).strict();
+
+export const AgentManifestInputSchema = z.object({
+  client: AgentClientSchema,
+  response_format: ResponseFormatSchema
+}).strict();
+
+export const ConnectionStatusInputSchema = z.object({
+  client: AgentClientSchema.optional(),
   response_format: ResponseFormatSchema
 }).strict();
 
@@ -148,13 +160,61 @@ export const CapabilitiesOutputSchema = z.object({
   privacy_modes: z.array(z.object({ mode: PrivacyModeValueSchema, use_when: z.string() }).strict()),
   supported_data: z.array(z.object({ name: z.string(), examples: z.array(z.string()), tools: z.array(z.string()) }).strict()),
   recommended_agent_flow: z.array(z.string()),
+  client_aliases: z.object({
+    hermes: z.object({
+      tool_prefix: z.string(),
+      direct_tools: z.array(z.string()),
+      reload_command: z.string(),
+      gateway_restart_required_for_data_access: z.boolean()
+    }).strict()
+  }).strict(),
   contribution_paths: z.array(z.string()),
   links: z.record(z.string())
 }).passthrough();
 
+export const AgentManifestOutputSchema = z.object({
+  project: z.string(),
+  mcp_name: z.string(),
+  client: AgentClientSchema,
+  unofficial: z.boolean(),
+  package: z.object({
+    name: z.string(),
+    version: z.string(),
+    install_command: z.string(),
+    pinned_install_command: z.string(),
+    binary: z.string()
+  }).strict(),
+  oauth: z.object({
+    provider: z.string(),
+    redirect_uri: z.string(),
+    scopes: z.array(z.string()),
+    token_storage: z.string(),
+    secret_storage: z.string()
+  }).strict(),
+  recommended_first_calls: z.array(z.string()),
+  standard_tools: z.array(z.string()),
+  resources: z.array(z.string()),
+  hermes: z.object({
+    config_path: z.string(),
+    skill_path: z.string(),
+    tool_name_prefix: z.string(),
+    common_tool_names: z.array(z.string()),
+    recommended_config: z.string(),
+    use_direct_tools: z.boolean(),
+    avoid_terminal_workarounds: z.boolean(),
+    no_gateway_restart_for_data_access: z.boolean(),
+    reload_after_config_change: z.string(),
+    doctor_command: z.string()
+  }).strict(),
+  agent_rules: z.array(z.string()),
+  troubleshooting: z.array(z.object({ symptom: z.string(), action: z.string() }).strict()),
+  links: z.record(z.string())
+}).strict();
+
 export const ConnectionStatusOutputSchema = z.object({
   ok: z.boolean(),
   ready_for_strava_api: z.boolean(),
+  client: AgentClientSchema.optional(),
   node: z.object({ version: z.string(), supported: z.boolean() }).strict(),
   privacy_mode: PrivacyModeValueSchema,
   required_env: z.record(z.boolean()),
@@ -172,6 +232,21 @@ export const ConnectionStatusOutputSchema = z.object({
     profile_tools_ready: z.boolean()
   }).strict(),
   cache: z.object({ enabled: z.boolean(), path: z.string() }).strict(),
+  client_checks: z.object({
+    hermes: z.object({
+      config_path: z.string(),
+      config_exists: z.boolean(),
+      strava_server_configured: z.boolean(),
+      package_pinned: z.boolean(),
+      mcp_reload_confirmation_disabled: z.boolean().optional(),
+      skill_path: z.string(),
+      skill_installed: z.boolean(),
+      direct_tool_prefix: z.string(),
+      expected_direct_tools: z.array(z.string()),
+      recommendations: z.array(z.string()),
+      error: z.string().optional()
+    }).strict().optional()
+  }).strict().optional(),
   next_steps: z.array(z.string())
 }).strict();
 
@@ -185,6 +260,7 @@ export type IdInput = z.infer<typeof IdInputSchema>;
 export type ActivityStreamsInput = z.infer<typeof ActivityStreamsInputSchema>;
 export type SimpleReadInput = z.infer<typeof SimpleReadInputSchema>;
 export type ResponseOnlyInput = z.infer<typeof ResponseOnlyInputSchema>;
+export type AgentManifestInput = z.infer<typeof AgentManifestInputSchema>;
 export type AuthUrlInput = z.infer<typeof AuthUrlInputSchema>;
 export type ExchangeCodeInput = z.infer<typeof ExchangeCodeInputSchema>;
 export type DailySummaryInput = z.infer<typeof DailySummaryInputSchema>;

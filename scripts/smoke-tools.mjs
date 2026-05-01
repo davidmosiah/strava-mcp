@@ -3,6 +3,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const expectedTools = [
+  'strava_agent_manifest',
   'strava_cache_status',
   'strava_capabilities',
   'strava_connection_status',
@@ -26,6 +27,7 @@ const expectedTools = [
 ];
 
 const expectedResources = [
+  'strava://agent-manifest',
   'strava://athlete',
   'strava://capabilities',
   'strava://latest/activity',
@@ -67,10 +69,18 @@ try {
   assert.equal(capabilitiesResult.structuredContent?.unofficial, true);
   assert.ok(capabilitiesResult.structuredContent?.api_boundary?.does_not_include?.includes('continuous heart-rate samples outside recorded activities'));
   assert.ok(capabilitiesResult.structuredContent?.recommended_agent_flow?.some((step) => step.includes('strava_connection_status')));
+  assert.ok(capabilitiesResult.structuredContent?.recommended_agent_flow?.some((step) => step.includes('strava_agent_manifest')));
 
-  const statusResult = await client.callTool({ name: 'strava_connection_status', arguments: { response_format: 'json' } });
+  const manifestResult = await client.callTool({ name: 'strava_agent_manifest', arguments: { client: 'hermes', response_format: 'json' } });
+  assert.equal(manifestResult.structuredContent?.client, 'hermes');
+  assert.ok(manifestResult.structuredContent?.hermes?.common_tool_names?.includes('mcp_strava_strava_connection_status'));
+  assert.equal(manifestResult.structuredContent?.hermes?.no_gateway_restart_for_data_access, true);
+
+  const statusResult = await client.callTool({ name: 'strava_connection_status', arguments: { client: 'hermes', response_format: 'json' } });
   assert.equal(statusResult.structuredContent?.ok, false);
   assert.ok(statusResult.structuredContent?.missing_env?.includes('STRAVA_CLIENT_ID'));
+  assert.equal(statusResult.structuredContent?.client, 'hermes');
+  assert.ok(statusResult.structuredContent?.client_checks?.hermes?.recommendations?.some((step) => step.includes('/reload-mcp')));
 
   console.log(JSON.stringify({ ok: true, tools: toolNames.length, resources: resourceUris.length, prompts: promptNames.length }, null, 2));
 } finally {
