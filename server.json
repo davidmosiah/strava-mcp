@@ -1,0 +1,71 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.davidmosiah/strava-mcp",
+  "description": "Privacy-first, unofficial Strava MCP server for AI training, route, activity stream and performance agents.",
+  "repository": {
+    "url": "https://github.com/davidmosiah/strava-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "strava-mcp-unofficial",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "STRAVA_CLIENT_ID",
+          "description": "Strava OAuth client ID. Optional when configured with strava-mcp-server setup.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "STRAVA_CLIENT_SECRET",
+          "description": "Strava OAuth client secret. Prefer strava-mcp-server setup so this secret is stored in ~/.strava-mcp/config.json instead of MCP client config.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "STRAVA_REDIRECT_URI",
+          "description": "Redirect URI configured in the Strava Developer Dashboard. Optional when configured with strava-mcp-server setup.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "STRAVA_TOKEN_PATH",
+          "description": "Optional local path for OAuth tokens. Defaults to ~/.strava-mcp/tokens.json.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "STRAVA_PRIVACY_MODE",
+          "description": "Optional payload mode: summary, structured, or raw. Defaults to structured. raw means full Strava API payloads, not continuous 24/7 raw sensor telemetry.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "STRAVA_CACHE",
+          "description": "Optional SQLite cache toggle. Set to true or sqlite to enable.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "STRAVA_CACHE_PATH",
+          "description": "Optional local SQLite cache path. Defaults to ~/.strava-mcp/cache.sqlite.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

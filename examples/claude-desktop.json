@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "strava": {
+      "command": "npx",
+      "args": ["-y", "strava-mcp-unofficial"]
+    }
+  }
+}

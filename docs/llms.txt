@@ -1,0 +1,22 @@
+# Strava MCP Unofficial
+
+Unofficial local-first MCP server for connecting AI agents to user-authorized Strava activity, route, stream and training data through the official Strava API.
+
+Canonical site: https://stravamcp.vercel.app/
+Repository: https://github.com/davidmosiah/strava-mcp
+npm: https://www.npmjs.com/package/strava-mcp-unofficial
+
+Important boundaries:
+- Unofficial; not affiliated with Strava, Inc.
+- Uses official Strava API v3 and OAuth2.
+- Read-only by default.
+- GPS/map data is privacy-sensitive and redacted by default.
+- Raw means upstream Strava API payload, not continuous 24/7 raw sensor telemetry.
+- Activity streams may include heartrate/cadence/watts/altitude/GPS only for recorded activities when available.
+- Not medical advice.
+
+Recommended first tools:
+1. strava_capabilities
+2. strava_connection_status
+3. strava_daily_summary
+4. strava_weekly_summary
