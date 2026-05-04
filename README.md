@@ -210,5 +210,6 @@ npm test
 - Source: <https://github.com/davidmosiah/strava-mcp>
 - npm: <https://www.npmjs.com/package/strava-mcp-unofficial>
 - Delx Wellness registry: <https://github.com/davidmosiah/delx-wellness>
+- Connector quality standard: <https://github.com/davidmosiah/delx-wellness/blob/main/docs/connector-quality-standard.md>
 - Strava API docs: <https://developers.strava.com/docs/reference/>
 - Strava auth docs: <https://developers.strava.com/docs/authentication/>
