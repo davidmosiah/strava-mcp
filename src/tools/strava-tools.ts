@@ -21,7 +21,9 @@ import {
   ResponseOnlyInputSchema,
   SimpleReadInputSchema,
   SummaryOutputSchema,
-  WeeklySummaryInputSchema
+  WeeklySummaryInputSchema,
+  TrainingContextInputSchema,
+  TrainingContextOutputSchema
 } from "../schemas/common.js";
 import { buildPrivacyAudit } from "../services/audit.js";
 import { buildAgentManifest, formatAgentManifestMarkdown } from "../services/agent-manifest.js";
@@ -31,6 +33,7 @@ import { getConfig } from "../services/config.js";
 import { bulletList, formatCollection, makeError, makeResponse } from "../services/format.js";
 import { applyPrivacy, normalizeStreams, resolvePrivacyMode } from "../services/privacy.js";
 import { buildDailySummary, buildWeeklySummary, formatSummaryMarkdown } from "../services/summary.js";
+import { buildTrainingContext, formatTrainingContextMarkdown } from "../services/context.js";
 import { StravaClient } from "../services/strava-client.js";
 
 function client(): StravaClient {
@@ -305,6 +308,7 @@ export function registerStravaTools(server: McpServer): void {
       return makeResponse(status, response_format, bulletList("Strava Connection Status", {
         ok: status.ok,
         ready_for_strava_api: status.ready_for_strava_api,
+        effective_status: status.effective_status,
         client: status.client,
         missing_env: status.missing_env.join(", ") || "none",
         scope_status: status.oauth.scope_status,
@@ -387,6 +391,21 @@ export function registerStravaTools(server: McpServer): void {
     try {
       const summary = await buildWeeklySummary(client(), params);
       return makeResponse(summary, params.response_format, formatSummaryMarkdown(summary));
+    } catch (error) {
+      return makeError((error as Error).message);
+    }
+  });
+
+  server.registerTool("strava_training_context", {
+    title: "Strava Training Context",
+    description: "Normalize recent Strava activity load into a compact training_context for workout recommendation engines. Includes fallback guidance when recent Strava activity is missing.",
+    inputSchema: TrainingContextInputSchema.shape,
+    outputSchema: TrainingContextOutputSchema.shape,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, async (params) => {
+    try {
+      const context = await buildTrainingContext(client(), params);
+      return makeResponse(context, params.response_format, formatTrainingContextMarkdown(context));
     } catch (error) {
       return makeError((error as Error).message);
     }

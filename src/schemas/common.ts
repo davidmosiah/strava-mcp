@@ -78,6 +78,15 @@ export const DailySummaryInputSchema = z.object({
   response_format: ResponseFormatSchema
 }).strict();
 
+export const TrainingContextInputSchema = z.object({
+  days: z.number().int().min(1).max(30).default(7).describe("Lookback window for normalized Strava training context."),
+  timezone: z.string().min(1).max(80).default("UTC").describe("IANA timezone used only for display, e.g. America/New_York."),
+  soreness: z.array(z.string().min(1).max(80)).default([]),
+  injury_flags: z.array(z.string().min(1).max(120)).default([]),
+  notes: z.string().max(500).optional(),
+  response_format: ResponseFormatSchema
+}).strict();
+
 export const WeeklySummaryInputSchema = z.object({
   days: z.number().int().min(7).max(60).default(7).describe("Recent analysis window in days."),
   compare_days: z.number().int().min(0).max(60).default(7).describe("Prior comparison window in days. Use 0 to disable comparison."),
@@ -214,6 +223,7 @@ export const AgentManifestOutputSchema = z.object({
 export const ConnectionStatusOutputSchema = z.object({
   ok: z.boolean(),
   ready_for_strava_api: z.boolean(),
+  effective_status: z.enum(["missing_config", "missing_token", "expired", "refreshable", "ready"]),
   client: AgentClientSchema.optional(),
   node: z.object({ version: z.string(), supported: z.boolean() }).strict(),
   privacy_mode: PrivacyModeValueSchema,
@@ -255,6 +265,22 @@ export const SummaryOutputSchema = z.object({
   generated_at: z.string()
 }).passthrough();
 
+export const TrainingContextOutputSchema = z.object({
+  source: z.literal("strava"),
+  generated_at: z.string(),
+  recent_training_load: z.enum(["low", "normal", "high", "unknown"]),
+  last_activity_type: z.unknown().optional(),
+  weekly_minutes: z.number().nonnegative().optional(),
+  relative_effort: z.number().nonnegative().optional(),
+  soreness_hint: z.number().nonnegative().optional(),
+  soreness: z.array(z.string()),
+  injury_flags: z.array(z.string()),
+  notes: z.array(z.string()).optional(),
+  data_quality: z.unknown().optional(),
+  fallback_hint: z.string().optional(),
+  telegram_summary: z.string().optional()
+}).strict();
+
 export type CollectionInput = z.infer<typeof CollectionInputSchema>;
 export type IdInput = z.infer<typeof IdInputSchema>;
 export type ActivityStreamsInput = z.infer<typeof ActivityStreamsInputSchema>;
@@ -264,4 +290,5 @@ export type AgentManifestInput = z.infer<typeof AgentManifestInputSchema>;
 export type AuthUrlInput = z.infer<typeof AuthUrlInputSchema>;
 export type ExchangeCodeInput = z.infer<typeof ExchangeCodeInputSchema>;
 export type DailySummaryInput = z.infer<typeof DailySummaryInputSchema>;
+export type TrainingContextInput = z.infer<typeof TrainingContextInputSchema>;
 export type WeeklySummaryInput = z.infer<typeof WeeklySummaryInputSchema>;

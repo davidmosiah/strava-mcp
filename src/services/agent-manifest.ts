@@ -18,6 +18,7 @@ export const STRAVA_TOOL_NAMES = [
   "strava_get_activity_zones",
   "strava_daily_summary",
   "strava_weekly_summary",
+  "strava_training_context",
   "strava_privacy_audit",
   "strava_cache_status",
   "strava_revoke_access"
@@ -37,6 +38,7 @@ export const HERMES_DIRECT_TOOLS = [
   "mcp_strava_strava_list_activities",
   "mcp_strava_strava_daily_summary",
   "mcp_strava_strava_weekly_summary",
+  "mcp_strava_strava_training_context",
   "mcp_strava_strava_get_activity",
   "mcp_strava_strava_get_activity_streams",
   "mcp_strava_strava_privacy_audit",
@@ -72,6 +74,7 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
     recommended_first_calls: [
       "strava_agent_manifest",
       "strava_connection_status",
+      "strava_training_context",
       "strava_daily_summary",
       "strava_weekly_summary"
     ],
@@ -95,7 +98,8 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
       "After changing Hermes MCP config, use /reload-mcp; do not restart the Hermes gateway for normal Strava data access.",
       "Never print STRAVA_CLIENT_SECRET, access tokens or refresh tokens.",
       "Treat GPS, routes and raw streams as sensitive; request raw or latlng data only when the user explicitly asks.",
-      "Use the official Strava API boundary only; this package is unofficial and does not scrape private endpoints."
+      "Use the official Strava API boundary only; this package is unofficial and does not scrape private endpoints.",
+      "Use strava_training_context as the compact load handoff to Exercise Catalog; combine with WHOOP/Garmin/Oura for recovery physiology."
     ],
     troubleshooting: [
       {
@@ -158,6 +162,10 @@ export function hermesConfigSnippet(): string {
     "    args:",
     "      - -y",
     `      - ${PINNED_NPM_PACKAGE}`,
+    "    timeout: 120",
+    "    connect_timeout: 60",
+    "    sampling:",
+    "      enabled: false",
     "",
     "approvals:",
     "  mcp_reload_confirm: false"

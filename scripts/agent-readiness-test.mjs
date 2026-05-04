@@ -73,6 +73,29 @@ try {
   assert.deepEqual(ready.oauth.missing_recommended_scopes, []);
   assert.equal(ready.oauth.activity_tools_ready, true);
 
+  writeFileSync(tokenPath, JSON.stringify({
+    access_token: 'access',
+    refresh_token: 'refresh',
+    expires_at: 500,
+    scope: 'activity:read_all profile:read_all read'
+  }), { mode: 0o600 });
+
+  const refreshable = await buildConnectionStatus({
+    env: {
+      STRAVA_CLIENT_ID: 'client-id',
+      STRAVA_CLIENT_SECRET: 'client-secret',
+      STRAVA_REDIRECT_URI: 'http://127.0.0.1:4567/callback',
+      STRAVA_TOKEN_PATH: tokenPath
+    },
+    homeDir: dir,
+    nowMs: 1_000_000
+  });
+
+  assert.equal(refreshable.token.expired, true);
+  assert.equal(refreshable.token.has_refresh_token, true);
+  assert.equal(refreshable.effective_status, 'refreshable');
+  assert.equal(refreshable.ready_for_strava_api, true);
+
   console.log(JSON.stringify({ ok: true, markdown: true, scope_diagnostics: true }, null, 2));
 } finally {
   rmSync(dir, { recursive: true, force: true });

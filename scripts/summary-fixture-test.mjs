@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildDailySummary, buildWeeklySummary } from '../dist/services/summary.js';
+import { buildTrainingContext } from '../dist/services/context.js';
 
 const hour = 60 * 60 * 1000;
 const now = Date.now();
@@ -31,5 +32,13 @@ assert.equal(weekly.kind, 'weekly_summary');
 assert.equal(weekly.scorecard.current.activity_count, 3);
 assert.equal(weekly.scorecard.previous.activity_count, 1);
 assert.ok(weekly.diagnostic.bottlenecks.length >= 1);
+
+const context = await buildTrainingContext(fakeClient, { days: 7, timezone: 'UTC' });
+assert.equal(context.source, 'strava');
+assert.equal(context.recent_training_load, 'normal');
+assert.equal(context.last_activity_type, 'Run');
+assert.equal(context.weekly_minutes, 205);
+assert.equal(context.relative_effort, 240);
+assert.ok(context.telegram_summary.includes('Strava'));
 
 console.log(JSON.stringify({ ok: true, daily: daily.kind, weekly: weekly.kind }, null, 2));

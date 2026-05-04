@@ -18,6 +18,7 @@ export interface ConnectionStatusOptions {
 export interface ConnectionStatus extends Record<string, unknown> {
   ok: boolean;
   ready_for_strava_api: boolean;
+  effective_status: "missing_config" | "missing_token" | "expired" | "refreshable" | "ready";
   client?: AgentClientName;
   node: {
     version: string;
@@ -104,6 +105,7 @@ export async function buildConnectionStatus(options: ConnectionStatusOptions = {
   return {
     ok,
     ready_for_strava_api: ready,
+    effective_status: effectiveStatus({ missingEnv, token, ready }),
     client: options.client,
     node: {
       version: process.versions.node,
@@ -130,6 +132,14 @@ export async function buildConnectionStatus(options: ConnectionStatusOptions = {
     client_checks: clientChecks,
     next_steps: buildNextSteps({ missingEnv, token, nodeSupported, automaticAuthSupported, redirectUri, oauth })
   };
+}
+
+function effectiveStatus(input: { missingEnv: string[]; token: ConnectionStatus["token"]; ready: boolean }): ConnectionStatus["effective_status"] {
+  if (input.missingEnv.length > 0) return "missing_config";
+  if (!input.token.exists || !input.token.readable) return "missing_token";
+  if (input.token.expired && input.token.has_refresh_token) return "refreshable";
+  if (input.token.expired) return "expired";
+  return input.ready ? "ready" : "missing_config";
 }
 
 function parsePrivacyMode(value: string | undefined): PrivacyMode {

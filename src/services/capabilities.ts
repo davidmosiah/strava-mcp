@@ -38,7 +38,7 @@ export function buildCapabilities() {
       {
         name: "Activities and training load",
         examples: ["runs", "rides", "distance", "moving time", "elevation", "heart rate", "power", "relative effort"],
-        tools: ["strava_list_activities", "strava_get_activity", "strava_daily_summary", "strava_weekly_summary"]
+        tools: ["strava_list_activities", "strava_get_activity", "strava_daily_summary", "strava_weekly_summary", "strava_training_context"]
       },
       {
         name: "Activity streams",
@@ -56,6 +56,7 @@ export function buildCapabilities() {
       "Call strava_connection_status before calling Strava data tools.",
       "If setup is incomplete, guide the user through setup, auth, and doctor.",
       "Use strava_daily_summary or strava_weekly_summary before low-level activity tools.",
+      "Use strava_training_context for a compact recent_training_load handoff to Exercise Catalog or other workout recommenders.",
       "For Hermes, use direct tools such as mcp_strava_strava_connection_status and reload config with /reload-mcp instead of restarting the gateway.",
       "Treat GPS as sensitive; avoid raw route/latlng payloads unless explicitly requested.",
       "Use Strava for training/load context; pair with WHOOP/Garmin/Oura for recovery and sleep physiology.",
