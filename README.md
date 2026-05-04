@@ -1,5 +1,8 @@
 # Strava MCP Unofficial
 
+[![MCP Compatible](https://img.shields.io/badge/MCP-compatible-7C3AED?style=flat-square&logo=anthropic&logoColor=white)](https://modelcontextprotocol.io) [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://opensource.org/licenses/MIT) [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Provider: Strava](https://img.shields.io/badge/data-Strava-FC4C02?style=flat-square&logo=strava&logoColor=white)](https://strava.com)
+
+
 [![CI](https://github.com/davidmosiah/strava-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/davidmosiah/strava-mcp/actions/workflows/ci.yml)
 
 Unofficial, local-first MCP server that lets AI agents read your Strava activities, routes, streams and training context through the official Strava API.
