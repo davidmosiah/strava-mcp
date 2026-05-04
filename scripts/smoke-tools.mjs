@@ -36,9 +36,9 @@ const expectedResources = [
 ];
 
 const expectedPrompts = [
-  'activity_stream_investigator',
-  'daily_training_director',
-  'weekly_endurance_review'
+  'strava_activity_stream_investigator',
+  'strava_daily_training_director',
+  'strava_weekly_endurance_review'
 ];
 
 const client = new Client({ name: 'strava-mcp-smoke-test', version: '0.0.0' });
@@ -57,7 +57,7 @@ try {
   const promptNames = prompts.prompts.map((prompt) => prompt.name).sort();
   assert.deepEqual(promptNames, expectedPrompts.sort());
 
-  const prompt = await client.getPrompt({ name: 'daily_training_director', arguments: { timezone: 'UTC' } });
+  const prompt = await client.getPrompt({ name: 'strava_daily_training_director', arguments: { timezone: 'UTC' } });
   assert.ok(prompt.messages[0]?.content?.type === 'text');
 
   const auditResult = await client.callTool({ name: 'strava_privacy_audit', arguments: { response_format: 'json' } });

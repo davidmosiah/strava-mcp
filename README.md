@@ -1,60 +1,44 @@
-# Strava MCP Unofficial
+# strava-mcp-server
 
-[![MCP Compatible](https://img.shields.io/badge/MCP-compatible-7C3AED?style=flat-square&logo=anthropic&logoColor=white)](https://modelcontextprotocol.io) [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://opensource.org/licenses/MIT) [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Provider: Strava](https://img.shields.io/badge/data-Strava-FC4C02?style=flat-square&logo=strava&logoColor=white)](https://strava.com) [![npm version](https://img.shields.io/npm/v/strava-mcp-unofficial?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/strava-mcp-unofficial)
-
-
+[![MCP Compatible](https://img.shields.io/badge/MCP-compatible-7C3AED?style=flat-square&logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Provider: Strava](https://img.shields.io/badge/data-Strava-FC4C02?style=flat-square&logo=strava&logoColor=white)](https://strava.com)
+[![npm version](https://img.shields.io/npm/v/strava-mcp-unofficial?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/strava-mcp-unofficial)
 [![CI](https://github.com/davidmosiah/strava-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/davidmosiah/strava-mcp/actions/workflows/ci.yml)
+[![Delx Wellness](https://img.shields.io/badge/part%20of-Delx%20Wellness-0ea5a3?style=flat-square)](https://github.com/davidmosiah/delx-wellness)
 
-Unofficial, local-first MCP server that lets AI agents read your Strava activities, routes, streams and training context through the official Strava API.
+**Local-first MCP server that connects AI agents to your Strava activities, routes, streams and training context.**
 
-Website: <https://stravamcp.vercel.app/>
+> **Unofficial project.** Not affiliated with, endorsed by or supported by Strava, Inc. Strava is a trademark of its respective owner. Use this only with your own Strava account and in line with Strava's API agreement.
 
-GitHub Pages mirror: <https://davidmosiah.github.io/strava-mcp/>
+Built by [David Mosiah](https://github.com/davidmosiah) for people who use Claude, Cursor, Hermes, OpenClaw or other MCP-compatible agents to think about training, endurance and performance — without copy-pasting numbers from Strava.
 
-> **Unofficial project:** this repository is not affiliated with, endorsed by, sponsored by, or supported by Strava, Inc. Strava is a trademark of its respective owner. Use this project only with your own Strava account and according to Strava's Developer Terms and API policies.
+Part of [Delx Wellness](https://github.com/davidmosiah/delx-wellness), a registry of local-first wellness MCP connectors.
 
-Built by [David Mosiah](https://github.com/davidmosiah) for people building practical AI-agent workflows around training, endurance, routes, activity streams and performance reflection.
+## Why this exists
 
-## What It Does
+Strava holds the long memory of your training — every ride, run, swim, segment, route and stream. But it lives behind an OAuth API with strict rate limits (200 req/15min, 2k/day per app) and GPS data that's privacy-sensitive by default.
 
-`strava-mcp-server` exposes Strava to MCP-compatible agents with a privacy-first local setup:
+This package does the OAuth dance locally, throttles under Strava's per-app limits, redacts GPS lat/lng unless you explicitly opt in, and exposes Strava through the Model Context Protocol. Any MCP-compatible agent gets your training context with one config snippet. Tokens never leave your machine.
 
-- OAuth setup, auth and `doctor` CLI for non-technical users.
-- OAuth scope diagnostics: `doctor` detects limited tokens before agents hit permission errors.
-- Agent manifest: `strava_agent_manifest` and `strava://agent-manifest` give agents machine-readable install/runtime rules.
-- Hermes-aware setup: `setup --client hermes` writes a pinned MCP config and a local Hermes skill to reduce terminal/gateway friction.
-- Activity history: runs, rides, swims, walks, workouts and sport metadata.
-- Activity details: distance, moving time, elevation, heart rate, power, relative effort and gear.
-- Activity streams: time, distance, altitude, cadence, watts, heartrate and optional GPS lat/lng.
-- Athlete profile, zones, aggregate stats, routes, clubs and gear.
-- Daily and weekly workflow summaries for training decisions.
-- Privacy modes: `summary`, `structured`, `raw`.
-- GPS protection by default: raw route geometry and lat/lng streams require explicit intent.
-- Optional SQLite cache and local token storage with `0600` permissions.
+## Setup in 60 seconds
 
-The server runs over MCP `stdio`, so it works with Claude Desktop, Cursor, Windsurf, Hermes, OpenClaw and other MCP clients.
-
-## Install
+You'll need a Strava app ([create one here](https://www.strava.com/settings/api)) with redirect URI `http://127.0.0.1:3000/callback`.
 
 ```bash
-npx -y strava-mcp-unofficial setup
-npx -y strava-mcp-unofficial auth
-npx -y strava-mcp-unofficial doctor
+npx -y strava-mcp-unofficial setup    # interactive: paste client id + secret
+npx -y strava-mcp-unofficial auth     # opens browser, captures the OAuth code
+npx -y strava-mcp-unofficial doctor   # verifies you're ready
 ```
 
-`doctor` should report the recommended scopes as granted:
+`doctor` should report these scopes as granted:
 
 ```text
 read activity:read_all profile:read_all
 ```
 
-If you only see `read`, re-run:
-
-```bash
-npx -y strava-mcp-unofficial auth
-```
-
-For MCP clients, use the package without a subcommand so it starts the stdio server:
+If only `read` is granted, re-run `auth`. Then add this to your MCP client config:
 
 ```json
 {
@@ -67,20 +51,116 @@ For MCP clients, use the package without a subcommand so it starts the stdio ser
 }
 ```
 
-## Hermes / Server Install
+For Claude Desktop, run `setup --client claude` and the snippet is written for you.
 
-On a remote Hermes server, keep secrets out of chat and MCP client config when possible:
+## Try it with your agent
+
+Three things to ask first:
+
+```text
+Use strava_connection_status to check setup, then run strava_daily_summary.
+Tell me what my training context looks like in 5 lines.
+```
+
+```text
+Call strava_weekly_summary with response_format=json. Find my biggest
+load/intensity bottleneck and give me a next-week endurance plan.
+```
+
+```text
+Use the strava_activity_stream_investigator prompt for activity_id=<id>.
+Don't expose GPS unless I explicitly ask for it.
+```
+
+## Data availability
+
+This package uses the official Strava API v3. When this README says `raw`, it means the upstream Strava JSON for a supported endpoint — not continuous device telemetry.
+
+| Data | Available | Notes |
+|---|:---:|---|
+| Activities (runs, rides, swims, walks, workouts) | ✓ | All recorded activities |
+| Activity details + zones + splits | ✓ | HR, power, cadence, elevation, gear |
+| Activity streams (HR / cadence / watts / altitude) | ✓ | Per-second samples for the activity |
+| GPS lat/lng streams | opt-in | Hidden by default; requires `include_gps=true` or `raw` mode |
+| Athlete profile + zones + aggregate stats | ✓ | Authenticated athlete |
+| Routes + clubs + gear | ✓ | Route geometry redacted in summary/structured modes |
+| Live device telemetry / continuous HR | — | Not exposed by Strava's public API |
+
+## Tools
+
+**Start with these:**
+
+- `strava_connection_status` — verify local setup, scopes and readiness before calling Strava
+- `strava_daily_summary` — latest activity, weekly load and intensity context for today
+- `strava_weekly_summary` — scorecard, comparison vs prior week, next-week training plan
+
+**Auth & diagnostics**
+
+- `strava_capabilities`, `strava_agent_manifest`, `strava_privacy_audit`, `strava_cache_status`
+- `strava_get_auth_url`, `strava_exchange_code`, `strava_revoke_access`
+
+**Athlete & training**
+
+- `strava_get_athlete`, `strava_get_zones`, `strava_get_athlete_stats`
+
+**Activities & streams**
+
+- `strava_list_activities`, `strava_get_activity`, `strava_get_activity_zones`
+- `strava_get_activity_streams` — GPS lat/lng requires `include_gps=true` or `raw` mode
+
+**Routes & context**
+
+- `strava_list_routes`, `strava_get_route`, `strava_list_clubs`, `strava_get_gear`
+
+## Prompts
+
+- `strava_daily_training_director` — practical daily training brief
+- `strava_weekly_endurance_review` — week comparison + next-week endurance plan
+- `strava_activity_stream_investigator` — investigate one activity using streams (GPS-aware)
+
+Each accepts `timezone` (IANA, default `UTC`).
+
+## Resources
+
+- `strava://capabilities`, `strava://agent-manifest`
+- `strava://athlete`
+- `strava://latest/activity`
+- `strava://summary/daily`, `strava://summary/weekly`
+
+## Privacy & security
+
+- OAuth tokens are stored in `~/.strava-mcp/tokens.json` with `0600` permissions and are never returned by tools.
+- Write/upload scopes are **not** requested by default — read-only by design.
+- GPS lat/lng is removed in `summary` mode, limited in `structured` mode, and only included with explicit `include_gps=true` or `raw` mode.
+- Route geometry is also redacted unless raw mode is explicitly requested.
+- The MCP client never sees access or refresh tokens.
+- This is **not medical advice**. The server exposes user-authorized data for personal AI workflows, not diagnosis or training prescription.
+
+## Configuration
+
+`setup` writes most of these into `~/.strava-mcp/config.json` (`0600`). Manual env override is supported:
+
+```bash
+STRAVA_CLIENT_ID=…
+STRAVA_CLIENT_SECRET=…
+STRAVA_REDIRECT_URI=http://127.0.0.1:3000/callback
+
+# Optional
+STRAVA_SCOPES="read activity:read_all profile:read_all"
+STRAVA_PRIVACY_MODE=structured        # summary | structured | raw
+STRAVA_CACHE=sqlite                   # optional read-through cache
+```
+
+## Hermes / remote setup
 
 ```bash
 npx -y strava-mcp-unofficial setup --client hermes --no-auth
-npx -y strava-mcp-unofficial auth
+npx -y strava-mcp-unofficial auth                       # run locally if browser auth is needed
 npx -y strava-mcp-unofficial doctor --client hermes
 hermes mcp test strava
 ```
 
-If the browser OAuth flow must happen on your local machine, run `auth` locally, then copy only `~/.strava-mcp/tokens.json` to the server with `chmod 600`. The token must include `activity:read_all profile:read_all read` for activity history and streams.
-
-Hermes usually exposes names with its MCP prefix. Common direct tools:
+Hermes commonly exposes Strava tools with a prefix:
 
 - `mcp_strava_strava_agent_manifest`
 - `mcp_strava_strava_connection_status`
@@ -88,112 +168,22 @@ Hermes usually exposes names with its MCP prefix. Common direct tools:
 - `mcp_strava_strava_weekly_summary`
 - `mcp_strava_strava_get_activity_streams`
 
-After editing `~/.hermes/config.yaml`, use `/reload-mcp` or `hermes mcp test strava`. Do not restart the Hermes gateway for normal Strava data access.
+After Hermes config changes, use `/reload-mcp` or `hermes mcp test strava`. Don't restart the gateway for normal data access.
 
-## Create A Strava App
+If browser OAuth has to happen on a different machine than Hermes, run `auth` locally and copy `~/.strava-mcp/tokens.json` to the server with `chmod 600`. The token must include `activity:read_all profile:read_all read` for activity history and streams.
 
-Create an app at <https://www.strava.com/settings/api>.
+## Requirements
 
-Recommended callback / redirect URI:
-
-```text
-http://127.0.0.1:3000/callback
-```
-
-Default read scopes:
-
-```text
-read activity:read_all profile:read_all
-```
+- Node.js 20+
+- A Strava app with redirect URI `http://127.0.0.1:3000/callback`
 
 Why these scopes:
 
-- `read`: public profile, routes and public Strava resources.
-- `activity:read_all`: your activities, including private activities visible to your app.
-- `profile:read_all`: fuller authenticated athlete profile fields.
+- `read` — public profile, routes and public Strava resources
+- `activity:read_all` — your activities, including private activities visible to your app
+- `profile:read_all` — fuller authenticated athlete profile fields
 
 No write scope is requested by default.
-
-## Environment Variables
-
-`setup` writes these into `~/.strava-mcp/config.json`, so most users do not need to manually export them.
-
-```bash
-export STRAVA_CLIENT_ID="your-client-id"
-export STRAVA_CLIENT_SECRET="your-client-secret"
-export STRAVA_REDIRECT_URI="http://127.0.0.1:3000/callback"
-
-# Optional
-export STRAVA_SCOPES="read activity:read_all profile:read_all"
-export STRAVA_PRIVACY_MODE="structured" # summary | structured | raw
-export STRAVA_CACHE="sqlite"
-```
-
-## Tools
-
-Auth and setup:
-
-- `strava_agent_manifest`
-- `strava_get_auth_url`
-- `strava_exchange_code`
-- `strava_revoke_access`
-- `strava_connection_status`
-- `strava_cache_status`
-- `strava_privacy_audit`
-- `strava_capabilities`
-
-Athlete and training:
-
-- `strava_get_athlete`
-- `strava_get_zones`
-- `strava_get_athlete_stats`
-- `strava_list_activities`
-- `strava_get_activity`
-- `strava_get_activity_zones`
-- `strava_get_activity_streams`
-
-Routes and context:
-
-- `strava_list_routes`
-- `strava_get_route`
-- `strava_list_clubs`
-- `strava_get_gear`
-
-Workflow tools:
-
-- `strava_daily_summary`
-- `strava_weekly_summary`
-
-## Resources
-
-- `strava://capabilities`
-- `strava://agent-manifest`
-- `strava://athlete`
-- `strava://latest/activity`
-- `strava://summary/daily`
-- `strava://summary/weekly`
-
-## Prompts
-
-- `daily_training_director`
-- `weekly_endurance_review`
-- `activity_stream_investigator`
-
-## Data Boundary
-
-This project uses the official Strava API v3. When this project says `raw`, it means the upstream JSON returned by supported Strava endpoints.
-
-It does **not** mean continuous 24/7 sensor telemetry. Strava activity streams are tied to recorded activities and may include data such as heartrate, cadence, watts, altitude, distance and optional GPS lat/lng when Strava has it.
-
-## Security Model
-
-- Tokens stay local under `~/.strava-mcp/tokens.json`.
-- Local config is written with user-only permissions.
-- MCP tools do not return OAuth tokens.
-- Write/upload scopes are not requested by default.
-- GPS/map fields are removed from summary mode and limited in structured mode.
-- Raw payloads and GPS streams require explicit opt-in.
-- This project is not medical advice.
 
 ## Development
 
@@ -202,14 +192,29 @@ git clone https://github.com/davidmosiah/strava-mcp.git
 cd strava-mcp
 npm install
 npm test
+npm run build
+```
+
+Test with MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
 ## Links
 
-- Docs: <https://stravamcp.vercel.app/>
-- Source: <https://github.com/davidmosiah/strava-mcp>
 - npm: <https://www.npmjs.com/package/strava-mcp-unofficial>
+- Docs site: <https://stravamcp.vercel.app/>
+- GitHub Pages mirror: <https://davidmosiah.github.io/strava-mcp/>
 - Delx Wellness registry: <https://github.com/davidmosiah/delx-wellness>
 - Connector quality standard: <https://github.com/davidmosiah/delx-wellness/blob/main/docs/connector-quality-standard.md>
 - Strava API docs: <https://developers.strava.com/docs/reference/>
 - Strava auth docs: <https://developers.strava.com/docs/authentication/>
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+## Disclaimer
+
+This software is provided as-is. It is not a medical device, does not provide medical advice, and should not be used for diagnosis, treatment or training prescription. Always consult qualified professionals for medical or training concerns.

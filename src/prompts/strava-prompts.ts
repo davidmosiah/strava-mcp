@@ -14,9 +14,9 @@ function userPrompt(text: string) {
 
 export function registerStravaPrompts(server: McpServer): void {
   server.registerPrompt(
-    "daily_training_director",
+    "strava_daily_training_director",
     {
-      title: "Daily Training Director",
+      title: "Strava Daily Training Director",
       description: "Use Strava activity context to produce a practical daily training and recovery plan.",
       argsSchema: { timezone: TimezoneArg }
     },
@@ -31,9 +31,9 @@ Requirements:
   );
 
   server.registerPrompt(
-    "weekly_endurance_review",
+    "strava_weekly_endurance_review",
     {
-      title: "Weekly Endurance Review",
+      title: "Strava Weekly Endurance Review",
       description: "Use Strava weekly summary data to create a next-week training plan.",
       argsSchema: { timezone: TimezoneArg }
     },
@@ -48,9 +48,9 @@ Requirements:
   );
 
   server.registerPrompt(
-    "activity_stream_investigator",
+    "strava_activity_stream_investigator",
     {
-      title: "Activity Stream Investigator",
+      title: "Strava Activity Stream Investigator",
       description: "Investigate one Strava activity using streams while respecting GPS privacy.",
       argsSchema: { activity_id: z.string().describe("Strava activity id"), include_gps: z.string().default("false") }
     },
