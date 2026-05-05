@@ -75,7 +75,7 @@
   "bugs": {
     "url": "https://github.com/davidmosiah/strava-mcp/issues"
   },
-  "homepage": "https://stravamcp.vercel.app/",
+  "homepage": "https://wellness.delx.ai/connectors/strava",
   "mcpName": "io.github.davidmosiah/strava-mcp",
   "publishConfig": {
     "access": "public",

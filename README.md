@@ -204,7 +204,8 @@ npx @modelcontextprotocol/inspector node dist/index.js
 ## Links
 
 - npm: <https://www.npmjs.com/package/strava-mcp-unofficial>
-- Docs site: <https://stravamcp.vercel.app/>
+- Docs site: <https://wellness.delx.ai/connectors/strava>
+- Legacy docs: <https://stravamcp.vercel.app/>
 - GitHub Pages mirror: <https://davidmosiah.github.io/strava-mcp/>
 - Delx Wellness registry: <https://github.com/davidmosiah/delx-wellness>
 - Connector quality standard: <https://github.com/davidmosiah/delx-wellness/blob/main/docs/connector-quality-standard.md>
