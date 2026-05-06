@@ -6,37 +6,17 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const expectedTools = [
-  'strava_agent_manifest',
-  'strava_cache_status',
-  'strava_capabilities',
-  'strava_connection_status',
-  'strava_daily_summary',
-  'strava_exchange_code',
-  'strava_get_activity',
-  'strava_get_activity_streams',
-  'strava_get_activity_zones',
-  'strava_get_athlete',
-  'strava_get_athlete_stats',
-  'strava_get_auth_url',
-  'strava_get_gear',
-  'strava_get_route',
-  'strava_get_zones',
-  'strava_list_activities',
-  'strava_list_clubs',
-  'strava_list_routes',
-  'strava_privacy_audit',
-  'strava_revoke_access',
-  'strava_training_context',
-  'strava_weekly_summary'
+  'strava_agent_manifest', 'strava_cache_status', 'strava_capabilities', 'strava_connection_status',
+  'strava_daily_summary', 'strava_data_inventory', 'strava_exchange_code', 'strava_get_activity',
+  'strava_get_activity_streams', 'strava_get_activity_zones', 'strava_get_athlete', 'strava_get_athlete_stats',
+  'strava_get_auth_url', 'strava_get_gear', 'strava_get_route', 'strava_get_zones',
+  'strava_list_activities', 'strava_list_clubs', 'strava_list_routes', 'strava_privacy_audit',
+  'strava_revoke_access', 'strava_training_context', 'strava_weekly_summary'
 ];
 
 const expectedResources = [
-  'strava://agent-manifest',
-  'strava://athlete',
-  'strava://capabilities',
-  'strava://latest/activity',
-  'strava://summary/daily',
-  'strava://summary/weekly'
+  'strava://agent-manifest', 'strava://athlete', 'strava://capabilities', 'strava://inventory',
+  'strava://latest/activity', 'strava://summary/daily', 'strava://summary/weekly'
 ];
 
 const expectedPrompts = [
@@ -87,6 +67,10 @@ try {
   assert.ok(capabilitiesResult.structuredContent?.api_boundary?.does_not_include?.includes('continuous heart-rate samples outside recorded activities'));
   assert.ok(capabilitiesResult.structuredContent?.recommended_agent_flow?.some((step) => step.includes('strava_connection_status')));
   assert.ok(capabilitiesResult.structuredContent?.recommended_agent_flow?.some((step) => step.includes('strava_agent_manifest')));
+
+  const inventoryResult = await client.callTool({ name: 'strava_data_inventory', arguments: { response_format: 'json' } });
+  assert.equal(inventoryResult.structuredContent?.kind, 'data_inventory');
+  assert.equal(typeof inventoryResult.structuredContent?.source, 'string');
 
   const manifestResult = await client.callTool({ name: 'strava_agent_manifest', arguments: { client: 'hermes', response_format: 'json' } });
   assert.equal(manifestResult.structuredContent?.client, 'hermes');

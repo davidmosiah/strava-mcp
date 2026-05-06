@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildAgentManifest } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
+import { buildDataInventory } from "../services/inventory.js";
 import { getConfig } from "../services/config.js";
 import { applyPrivacy, resolvePrivacyMode } from "../services/privacy.js";
 import { buildDailySummary, buildWeeklySummary } from "../services/summary.js";
@@ -34,6 +35,7 @@ async function latestActivityResource(uri: URL) {
 }
 
 export function registerStravaResources(server: McpServer): void {
+  server.registerResource("strava_data_inventory", "strava://inventory", { title: "Strava Data Inventory", description: "Static inventory of supported Strava data domains, privacy modes and recommended first calls.", mimeType: "application/json" }, async (uri) => jsonResource(uri, buildDataInventory()));
   server.registerResource(
     "strava_agent_manifest_resource",
     "strava://agent-manifest",

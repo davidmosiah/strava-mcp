@@ -96,6 +96,7 @@ This package uses the official Strava API v3. When this README says `raw`, it me
 **Start with these:**
 
 - `strava_connection_status` — verify local setup, scopes and readiness before calling Strava
+- `strava_data_inventory` — inventory supported data domains, scopes, privacy modes and recommended first calls without calling Strava APIs.
 - `strava_daily_summary` — latest activity, weekly load and intensity context for today
 - `strava_weekly_summary` — scorecard, comparison vs prior week, next-week training plan
 

@@ -4,46 +4,26 @@ export const AGENT_CLIENTS = ["generic", "claude", "cursor", "windsurf", "hermes
 export type AgentClientName = typeof AGENT_CLIENTS[number];
 
 export const STRAVA_TOOL_NAMES = [
-  "strava_agent_manifest",
-  "strava_connection_status",
-  "strava_capabilities",
-  "strava_get_auth_url",
-  "strava_exchange_code",
-  "strava_get_athlete",
-  "strava_get_zones",
-  "strava_get_athlete_stats",
-  "strava_list_activities",
-  "strava_get_activity",
-  "strava_get_activity_streams",
-  "strava_get_activity_zones",
-  "strava_daily_summary",
-  "strava_weekly_summary",
-  "strava_training_context",
-  "strava_privacy_audit",
-  "strava_cache_status",
-  "strava_revoke_access"
+  "strava_agent_manifest", "strava_cache_status", "strava_capabilities",
+  "strava_connection_status", "strava_daily_summary", "strava_data_inventory",
+  "strava_exchange_code", "strava_get_activity", "strava_get_activity_streams",
+  "strava_get_activity_zones", "strava_get_athlete", "strava_get_athlete_stats",
+  "strava_get_auth_url", "strava_get_zones", "strava_list_activities",
+  "strava_privacy_audit", "strava_revoke_access", "strava_training_context",
+  "strava_weekly_summary"
 ];
 
 export const STRAVA_RESOURCE_URIS = [
-  "strava://agent-manifest",
-  "strava://capabilities",
-  "strava://athlete",
-  "strava://latest/activity",
-  "strava://summary/daily",
+  "strava://agent-manifest", "strava://athlete", "strava://capabilities",
+  "strava://inventory", "strava://latest/activity", "strava://summary/daily",
   "strava://summary/weekly"
 ];
 
 export const HERMES_DIRECT_TOOLS = [
-  "mcp_strava_strava_connection_status",
-  "mcp_strava_strava_list_activities",
-  "mcp_strava_strava_daily_summary",
-  "mcp_strava_strava_weekly_summary",
-  "mcp_strava_strava_training_context",
-  "mcp_strava_strava_get_activity",
-  "mcp_strava_strava_get_activity_streams",
-  "mcp_strava_strava_privacy_audit",
-  "mcp_strava_strava_capabilities",
-  "mcp_strava_strava_agent_manifest"
+  "mcp_strava_strava_agent_manifest", "mcp_strava_strava_capabilities", "mcp_strava_strava_connection_status",
+  "mcp_strava_strava_daily_summary", "mcp_strava_strava_data_inventory", "mcp_strava_strava_get_activity",
+  "mcp_strava_strava_get_activity_streams", "mcp_strava_strava_list_activities", "mcp_strava_strava_privacy_audit",
+  "mcp_strava_strava_training_context", "mcp_strava_strava_weekly_summary"
 ];
 
 export function parseAgentClientName(value: string): AgentClientName {
@@ -74,6 +54,7 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
     recommended_first_calls: [
       "strava_agent_manifest",
       "strava_connection_status",
+      "strava_data_inventory",
       "strava_training_context",
       "strava_daily_summary",
       "strava_weekly_summary"
@@ -93,7 +74,7 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
       doctor_command: `npx -y ${PINNED_NPM_PACKAGE} doctor --client hermes`
     },
     agent_rules: [
-      "Call strava_connection_status before Strava data tools.",
+      "Call strava_connection_status and strava_data_inventory before Strava data tools.",
       "If running inside Hermes, prefer direct MCP tools named mcp_strava_strava_* instead of shelling out through Python or terminal commands.",
       "After changing Hermes MCP config, use /reload-mcp; do not restart the Hermes gateway for normal Strava data access.",
       "Never print STRAVA_CLIENT_SECRET, access tokens or refresh tokens.",

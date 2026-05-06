@@ -12,22 +12,24 @@ import {
   ConnectionStatusInputSchema,
   ConnectionStatusOutputSchema,
   DailySummaryInputSchema,
+  DataInventoryOutputSchema,
   EndpointDataOutputSchema,
   ExchangeCodeInputSchema,
   ExchangeCodeOutputSchema,
   IdInputSchema,
   PrivacyAuditOutputSchema,
-  RevokeAccessOutputSchema,
   ResponseOnlyInputSchema,
+  RevokeAccessOutputSchema,
   SimpleReadInputSchema,
   SummaryOutputSchema,
-  WeeklySummaryInputSchema,
   TrainingContextInputSchema,
-  TrainingContextOutputSchema
+  TrainingContextOutputSchema,
+  WeeklySummaryInputSchema
 } from "../schemas/common.js";
 import { buildPrivacyAudit } from "../services/audit.js";
 import { buildAgentManifest, formatAgentManifestMarkdown } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
+import { buildDataInventory, formatInventoryMarkdown } from "../services/inventory.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
 import { getConfig } from "../services/config.js";
 import { bulletList, formatCollection, makeError, makeResponse } from "../services/format.js";
@@ -106,6 +108,21 @@ function registerGetByIdTool(server: McpServer, name: string, title: string, end
 }
 
 export function registerStravaTools(server: McpServer): void {
+  server.registerTool("strava_data_inventory", {
+    title: "Strava Data Inventory",
+    description: "Inventory supported Strava data domains, auth scope requirements, privacy boundary and recommended first calls. Does not call Strava APIs or expose user data.",
+    inputSchema: ResponseOnlyInputSchema.shape,
+    outputSchema: DataInventoryOutputSchema.shape,
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
+    }
+  }, async ({ response_format }) => {
+    const inventory = buildDataInventory();
+    return makeResponse(inventory, response_format, formatInventoryMarkdown(inventory));
+  });
   server.registerTool(
     "strava_agent_manifest",
     {
