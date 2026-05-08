@@ -49,4 +49,40 @@ assert.ok(contextMarkdown.includes('context_type'));
 assert.ok(contextMarkdown.includes('withheld_from_context'));
 assert.ok(contextMarkdown.includes('exercise_catalog_recommend_session'));
 
-console.log(JSON.stringify({ ok: true, daily: daily.kind, weekly: weekly.kind }, null, 2));
+// Privacy boundary: enforce by-omission. The privacy.gps="withheld_from_context"
+// flag is a *declaration*; this assertion is the *contract* — none of the GPS-bearing
+// keys Strava exposes upstream may appear at any depth in the training context.
+const FORBIDDEN_GPS_KEYS = [
+  'polyline',
+  'start_latlng',
+  'end_latlng',
+  'map',
+  'gps_polyline',
+  'summary_polyline',
+  'gps_coordinates',
+  'latlng_stream',
+  'coordinates',
+];
+
+function assertNoGpsKeys(node, path = '$') {
+  if (node === null || node === undefined) return;
+  if (Array.isArray(node)) {
+    node.forEach((item, idx) => assertNoGpsKeys(item, `${path}[${idx}]`));
+    return;
+  }
+  if (typeof node !== 'object') return;
+  for (const [key, value] of Object.entries(node)) {
+    if (FORBIDDEN_GPS_KEYS.includes(key)) {
+      throw new Error(`Privacy boundary violated: GPS-bearing key "${key}" found at ${path}.${key}`);
+    }
+    assertNoGpsKeys(value, `${path}.${key}`);
+  }
+}
+
+assertNoGpsKeys(context, 'context');
+// Round-trip through JSON to catch keys that survive serialization (e.g. via
+// custom toJSON or accessor leaks). The privacy claim is what the agent
+// downstream sees, which is the JSON shape.
+assertNoGpsKeys(JSON.parse(JSON.stringify(context)), 'context_json');
+
+console.log(JSON.stringify({ ok: true, daily: daily.kind, weekly: weekly.kind, privacy_keys_absent: FORBIDDEN_GPS_KEYS.length }, null, 2));
