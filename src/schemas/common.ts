@@ -295,11 +295,15 @@ export const SummaryOutputSchema = z.object({
 
 export const TrainingContextOutputSchema = z.object({
   source: z.literal("strava"),
+  context_contract_version: z.literal("delx-wellness-context/v1"),
+  context_type: z.literal("training_context"),
   generated_at: z.string(),
   recent_training_load: z.enum(["low", "normal", "high", "unknown"]),
   last_activity_type: z.unknown().optional(),
   weekly_minutes: z.number().nonnegative().optional(),
   relative_effort: z.number().nonnegative().optional(),
+  privacy: z.object({ gps: z.string(), route_details: z.string() }).strict(),
+  recommended_handoff: z.object({ tool: z.string(), reason: z.string() }).strict(),
   soreness_hint: z.number().nonnegative().optional(),
   soreness: z.array(z.string()),
   injury_flags: z.array(z.string()),
