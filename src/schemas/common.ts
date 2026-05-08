@@ -302,7 +302,10 @@ export const TrainingContextOutputSchema = z.object({
   last_activity_type: z.unknown().optional(),
   weekly_minutes: z.number().nonnegative().optional(),
   relative_effort: z.number().nonnegative().optional(),
-  privacy: z.object({ gps: z.string(), route_details: z.string() }).strict(),
+  privacy: z.object({
+    gps: z.literal("withheld_from_context"),
+    route_details: z.literal("not_included"),
+  }).strict(),
   recommended_handoff: z.object({ tool: z.string(), reason: z.string() }).strict(),
   soreness_hint: z.number().nonnegative().optional(),
   soreness: z.array(z.string()),
