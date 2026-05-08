@@ -39,11 +39,21 @@ export async function buildTrainingContext(client: Pick<StravaClient, "list">, o
 
   return {
     source: "strava",
+    context_contract_version: "delx-wellness-context/v1",
+    context_type: "training_context",
     generated_at: summary.generated_at,
     recent_training_load: recentTrainingLoad,
     last_activity_type: latest.sport_type,
     weekly_minutes: weeklyMinutes,
     relative_effort: relativeEffort,
+    privacy: {
+      gps: "withheld_from_context",
+      route_details: "not_included",
+    },
+    recommended_handoff: {
+      tool: "exercise_catalog_recommend_session",
+      reason: "Use recent Strava training load to avoid stacking hard sessions without recovery context.",
+    },
     soreness_hint: recentTrainingLoad === "high" ? 1 : 0,
     soreness: options.soreness ?? [],
     injury_flags: options.injury_flags ?? [],
@@ -62,8 +72,23 @@ export async function buildTrainingContext(client: Pick<StravaClient, "list">, o
 
 export function formatTrainingContextMarkdown(context: Record<string, unknown>): string {
   const lines = ["# Strava Training Context", ""];
-  for (const key of ["recent_training_load", "last_activity_type", "weekly_minutes", "relative_effort", "fallback_hint"]) {
+  for (const key of ["context_contract_version", "context_type", "recent_training_load", "last_activity_type", "weekly_minutes", "relative_effort", "fallback_hint"]) {
     if (context[key] !== undefined) lines.push(`- **${key}**: ${String(context[key])}`);
   }
+
+  const privacy = record(context.privacy);
+  if (privacy.gps !== undefined || privacy.route_details !== undefined) {
+    lines.push("", "## Privacy");
+    if (privacy.gps !== undefined) lines.push(`- **gps**: ${String(privacy.gps)}`);
+    if (privacy.route_details !== undefined) lines.push(`- **route_details**: ${String(privacy.route_details)}`);
+  }
+
+  const handoff = record(context.recommended_handoff);
+  if (handoff.tool !== undefined || handoff.reason !== undefined) {
+    lines.push("", "## Recommended Handoff");
+    if (handoff.tool !== undefined) lines.push(`- **tool**: ${String(handoff.tool)}`);
+    if (handoff.reason !== undefined) lines.push(`- **reason**: ${String(handoff.reason)}`);
+  }
+
   return lines.join("\n");
 }
