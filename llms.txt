@@ -1,15 +1,17 @@
-# Strava Mcp
-Unofficial local-first Strava MCP server for AI training and performance agents.
+# Strava MCP
+Unofficial local-first Strava MCP server for AI training, activity, segments and route agents.
 Repository: https://github.com/davidmosiah/strava-mcp
 Homepage: https://wellness.delx.ai/connectors/strava
 NPM: https://www.npmjs.com/package/strava-mcp-unofficial
-Primary command: npm exec --yes --package=strava-mcp-unofficial -- strava-mcp-unofficial doctor
-MCP command: strava-mcp-unofficial
-Agent surfaces:
+Primary command: npm exec --yes --package=strava-mcp-unofficial -- strava-mcp-server doctor
+MCP command: strava-mcp-server
+
 - MCP registry name: io.github.davidmosiah/strava-mcp
-- Start with the connection/status or agent-manifest surface when available.
+- Start agents with strava_connection_status and strava_data_inventory before any data tool.
+- Read-only default tools: strava_agent_manifest, strava_capabilities, strava_privacy_audit, strava_connection_status, strava_data_inventory, strava_daily_summary, strava_weekly_summary, strava_cache_status.
+- OAuth env: STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI.
+- Optional env: STRAVA_TOKEN_PATH (token storage path), STRAVA_PRIVACY_MODE (summary|structured|raw, default structured), STRAVA_CACHE (true|sqlite to enable), STRAVA_CACHE_PATH.
+- Privacy: GPS coordinates and routes are withheld from context by default. Set STRAVA_GPS_INCLUDE=1 to include only when an agent explicitly needs them.
 - Prefer JSON responses for automation and markdown responses for human summaries.
-Safety:
-- Do not paste credentials, OAuth tokens, refresh tokens, API keys or raw private exports into chat.
-- Keep local config and generated data out of git.
-- Treat outputs as operational context, not medical, legal or financial advice unless the repo explicitly supports that domain.
+- Tokens stay local under ~/.strava-mcp/tokens.json (or equivalent) and should never be printed.
+- Not medical advice. Use as trend context only — outputs are operational context, not medical, legal or financial advice.
