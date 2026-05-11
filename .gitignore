@@ -9,4 +9,5 @@ coverage/
 
 # MCP Registry local auth tokens
 .mcpregistry_*_token
+.mcpregistry_*
 docs/.vercel/

@@ -6,11 +6,11 @@ export type AgentClientName = typeof AGENT_CLIENTS[number];
 export const STRAVA_TOOL_NAMES = [
   "strava_agent_manifest", "strava_cache_status", "strava_capabilities",
   "strava_connection_status", "strava_daily_summary", "strava_data_inventory",
-  "strava_exchange_code", "strava_get_activity", "strava_get_activity_streams",
-  "strava_get_activity_zones", "strava_get_athlete", "strava_get_athlete_stats",
-  "strava_get_auth_url", "strava_get_zones", "strava_list_activities",
-  "strava_privacy_audit", "strava_revoke_access", "strava_training_context",
-  "strava_weekly_summary"
+  "strava_demo", "strava_exchange_code", "strava_get_activity",
+  "strava_get_activity_streams", "strava_get_activity_zones", "strava_get_athlete",
+  "strava_get_athlete_stats", "strava_get_auth_url", "strava_get_zones",
+  "strava_list_activities", "strava_privacy_audit", "strava_quickstart",
+  "strava_revoke_access", "strava_training_context", "strava_weekly_summary"
 ];
 
 export const STRAVA_RESOURCE_URIS = [
@@ -52,12 +52,12 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
       secret_storage: "~/.strava-mcp/config.json"
     },
     recommended_first_calls: [
+      "strava_quickstart",
+      "strava_demo",
       "strava_agent_manifest",
       "strava_connection_status",
       "strava_data_inventory",
-      "strava_training_context",
-      "strava_daily_summary",
-      "strava_weekly_summary"
+      "strava_training_context"
     ],
     standard_tools: STRAVA_TOOL_NAMES,
     resources: STRAVA_RESOURCE_URIS,

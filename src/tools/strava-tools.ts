@@ -161,6 +161,141 @@ export function registerStravaTools(server: McpServer): void {
   );
 
   server.registerTool(
+    "strava_quickstart",
+    {
+      title: "Strava Quickstart",
+      description:
+        "Personalized 3-step setup walkthrough for the human user. Adapts to current state (env vars set? token present? what's next?). Call this first when the user asks 'how do I connect Strava?'",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false
+      }
+    },
+    async ({ response_format }) => {
+      const status = await buildConnectionStatus();
+      const hasEnv = status.missing_env.length === 0;
+      const hasToken = status.ready_for_strava_api;
+      const steps = [
+        {
+          step: 1,
+          title: hasEnv ? "(done) Strava API credentials configured" : "Sign up at https://www.strava.com/settings/api",
+          action: hasEnv
+            ? "STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REDIRECT_URI are all set."
+            : `Create a Strava API app, register a redirect URI (use ${status.redirect_uri ?? "http://127.0.0.1:3000/callback"}), then set: ${status.missing_env.join(", ")}.`,
+          done: hasEnv,
+        },
+        {
+          step: 2,
+          title: hasToken ? "(done) Local token present — ready to read Strava data" : "Run the OAuth dance",
+          action: hasToken
+            ? "Tokens stored under ~/.strava-mcp/tokens.json. The connector will refresh automatically when needed."
+            : "Run `strava-mcp-server auth` (or call strava_get_auth_url + strava_exchange_code from the agent). Open the URL, grant access, paste the code. Recommended scopes: read activity:read_all profile:read_all.",
+          done: hasToken,
+        },
+        {
+          step: 3,
+          title: "Verify with the agent (and review GPS privacy)",
+          action: "Call strava_connection_status, then strava_daily_summary or strava_training_context. GPS latlng and route geometry are withheld by default — set STRAVA_GPS_INCLUDE=true (or pass include_gps=true to strava_get_activity_streams) only when the user explicitly asks. Pair with wellness-nourish for fueling guidance.",
+          example: hasToken
+            ? "strava_training_context() → recent load + intensity handoff for nourish/cycle-coach."
+            : "Until step 2 is done, the data tools will surface a clear 'auth required' message.",
+          done: false,
+        },
+      ];
+      const payload = {
+        ok: true,
+        ready: hasEnv && hasToken,
+        steps,
+        next: steps.find((s) => !s.done) ?? steps[steps.length - 1],
+        gps_privacy_note: "Strava activities include GPS by default. This connector redacts latlng and route geometry unless STRAVA_GPS_INCLUDE=true or include_gps=true is explicitly passed.",
+        cross_connector_hints: [
+          "Pair Strava training load with wellness-nourish for fueling and recovery-aware meals.",
+          "Pair Strava load with wellness-cycle-coach for late-luteal training adjustments.",
+          "Pair Strava workouts + wellness-cgm-mcp glucose for endurance-fueling signals.",
+        ],
+      };
+      const markdown = bulletList("Strava Quickstart", {
+        ready: payload.ready,
+        next: payload.next.title,
+        gps_privacy_note: payload.gps_privacy_note,
+      });
+      return makeResponse(payload, response_format, markdown);
+    }
+  );
+
+  server.registerTool(
+    "strava_demo",
+    {
+      title: "Strava Demo",
+      description:
+        "Returns realistic example payloads of strava_daily_summary, strava_training_context, and strava_list_activities so agents see the contract before calling real Strava APIs.",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false
+      }
+    },
+    async ({ response_format }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const yesterday = new Date(Date.now() - 86_400_000).toISOString();
+      const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000).toISOString();
+      const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000).toISOString();
+      const payload = {
+        ok: true,
+        is_demo: true,
+        sample: {
+          strava_daily_summary: {
+            date: today,
+            activities: 1,
+            total_distance_km: 5.0,
+            total_duration_min: 28,
+            sport_mix: { Run: 1 },
+            intensity: { average_heart_rate: 142, max_heart_rate: 168, suffer_score: 32 },
+            elevation_gain_m: 42,
+          },
+          strava_training_context: {
+            window: "last_7d",
+            sessions: 4,
+            total_distance_km: 38.6,
+            total_duration_min: 215,
+            sport_mix: { Run: 3, Ride: 1 },
+            average_intensity: "moderate",
+            average_heart_rate: 138,
+            load_band: "moderate",
+            recommendation: "Steady aerobic block — one easy 5km, one tempo 8km, one long 12km, one recovery ride. Hold pace before adding intensity next week.",
+          },
+          strava_list_activities: {
+            count: 4,
+            records: [
+              { id: 1100000001, name: "Morning easy run", sport_type: "Run", start_date: yesterday, distance_m: 5012, moving_time_s: 1680, average_heartrate: 142, suffer_score: 32 },
+              { id: 1100000002, name: "Tempo intervals", sport_type: "Run", start_date: twoDaysAgo, distance_m: 8024, moving_time_s: 2640, average_heartrate: 165, suffer_score: 78 },
+              { id: 1100000003, name: "Recovery spin", sport_type: "Ride", start_date: threeDaysAgo, distance_m: 18500, moving_time_s: 2700, average_heartrate: 118, suffer_score: 22 },
+              { id: 1100000004, name: "Long run", sport_type: "Run", start_date: threeDaysAgo, distance_m: 12150, moving_time_s: 3960, average_heartrate: 138, suffer_score: 55 },
+            ],
+          },
+        },
+        notes: [
+          "All sample data is synthetic; tagged with is_demo=true.",
+          "Real calls return live data from the Strava v3 API after OAuth setup.",
+          "GPS latlng and route geometry are omitted by default; the demo payload mirrors that defensive shape.",
+        ],
+      };
+      const markdown = bulletList("Strava Demo", {
+        is_demo: true,
+        recent_sessions: 4,
+        average_heart_rate: 138,
+        recommendation: payload.sample.strava_training_context.recommendation,
+      });
+      return makeResponse(payload, response_format, markdown);
+    }
+  );
+
+  server.registerTool(
     "strava_get_auth_url",
     {
       title: "Get Strava OAuth URL",
