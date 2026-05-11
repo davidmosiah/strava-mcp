@@ -11,8 +11,8 @@ const expectedTools = [
   'strava_get_activity', 'strava_get_activity_streams', 'strava_get_activity_zones', 'strava_get_athlete',
   'strava_get_athlete_stats', 'strava_get_auth_url', 'strava_get_gear', 'strava_get_route',
   'strava_get_zones', 'strava_list_activities', 'strava_list_clubs', 'strava_list_routes',
-  'strava_privacy_audit', 'strava_quickstart', 'strava_revoke_access', 'strava_training_context',
-  'strava_weekly_summary'
+  'strava_onboarding', 'strava_privacy_audit', 'strava_profile_get', 'strava_profile_update',
+  'strava_quickstart', 'strava_revoke_access', 'strava_training_context', 'strava_weekly_summary'
 ];
 
 const expectedResources = [

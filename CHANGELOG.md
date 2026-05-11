@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 - 2026-05-11
+
+- Add shared wellness-profile support backed by the canonical Delx Wellness profile store at `~/.delx-wellness/profile.json` (vendored from `delx-wellness/lib/profile-store.ts` commit ab83d1a so the connector stays self-contained — no new npm deps).
+- Add `strava_profile_get` tool — read-only summary of the shared profile plus the missing-critical-fields hint and absolute storage path.
+- Add `strava_profile_update` tool — patch the shared profile but only when `explicit_user_intent=true`; otherwise it returns `USER_ACTION_REQUIRED` so agents do not silently persist things the user did not confirm.
+- Add `strava_onboarding` tool — returns the 11-question onboarding flow in `en` or `pt-BR`, current profile, missing critical fields, and a cross-connector hint for pairing with `wellness-nourish`, `wellness-cycle-coach`, and `wellness-cgm-mcp`.
+- Add `strava-mcp-server onboarding` CLI command — emits the same flow as JSON to stdout and a friendly Markdown summary to stderr when the terminal is interactive. Supports `--locale pt-BR`.
+- Privacy contract: the shared profile NEVER stores OAuth tokens, refresh tokens, API keys, cookies, session ids or biomarkers. Strava continues to redact GPS latlng and route geometry by default — this profile does not change that posture. Set `STRAVA_GPS_INCLUDE=true` or `include_gps=true` only when the user explicitly asks.
+- `recommended_first_calls` on the agent manifest now leads with `strava_profile_get` before `strava_quickstart`.
+- Tool count: 25 → 28.
+
 ## 0.3.0 - 2026-05-11
 
 - Add `strava_quickstart` tool — personalized 3-step setup walkthrough adapted to current state (env vars set? OAuth token present? what's next?). Mentions `STRAVA_GPS_INCLUDE` and the default GPS/route-geometry redaction posture. Returns cross-connector hints to pair with wellness-nourish, wellness-cycle-coach, and wellness-cgm-mcp.

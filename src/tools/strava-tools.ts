@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import {
   ActivityStreamsInputSchema,
   AgentManifestInputSchema,
@@ -18,6 +19,7 @@ import {
   ExchangeCodeOutputSchema,
   IdInputSchema,
   PrivacyAuditOutputSchema,
+  ResponseFormatSchema,
   ResponseOnlyInputSchema,
   RevokeAccessOutputSchema,
   SimpleReadInputSchema,
@@ -37,6 +39,14 @@ import { applyPrivacy, normalizeStreams, resolvePrivacyMode } from "../services/
 import { buildDailySummary, buildWeeklySummary, formatSummaryMarkdown } from "../services/summary.js";
 import { buildTrainingContext, formatTrainingContextMarkdown } from "../services/context.js";
 import { StravaClient } from "../services/strava-client.js";
+import {
+  buildProfileSummary,
+  getOnboardingFlow,
+  getProfile,
+  getProfilePath,
+  missingCriticalFields,
+  updateProfile
+} from "../services/profile-store.js";
 
 function client(): StravaClient {
   return new StravaClient(getConfig());
@@ -558,6 +568,108 @@ export function registerStravaTools(server: McpServer): void {
     try {
       const context = await buildTrainingContext(client(), params);
       return makeResponse(context, params.response_format, formatTrainingContextMarkdown(context));
+    } catch (error) {
+      return makeError((error as Error).message);
+    }
+  });
+
+  const ProfileGetInputSchema = ResponseOnlyInputSchema;
+  const ProfileUpdateInputSchema = z.object({
+    patch: z.record(z.string(), z.unknown()).describe("Partial WellnessProfileDocument patch. Top-level keys: profile, goals, devices, training, nutrition, preferences, safety, notes."),
+    explicit_user_intent: z.boolean().optional().describe("Set to true ONLY after the user has explicitly confirmed they want to save this. Otherwise the tool refuses to write."),
+    response_format: ResponseFormatSchema
+  }).strict();
+  const OnboardingInputSchema = z.object({
+    locale: z.enum(["en", "pt-BR"]).optional().describe("Onboarding locale. Defaults to en."),
+    response_format: ResponseFormatSchema
+  }).strict();
+
+  server.registerTool("strava_profile_get", {
+    title: "Get Shared Wellness Profile",
+    description:
+      "Read the canonical Delx Wellness profile shared with the other wellness MCP connectors (Nourish, Cycle Coach, CGM, etc.). Read-only. Profile stores only what the user typed during onboarding — never OAuth tokens, API keys, or biomarkers. Note: this profile does NOT change Strava's GPS-redaction default; Strava continues to redact latlng and route geometry unless STRAVA_GPS_INCLUDE=true or include_gps=true is explicitly passed.",
+    inputSchema: ProfileGetInputSchema.shape,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+  }, async ({ response_format }) => {
+    try {
+      const profile = await getProfile();
+      const payload = {
+        ok: true,
+        profile,
+        summary: buildProfileSummary(profile),
+        missing_critical: missingCriticalFields(profile),
+        storage_path: getProfilePath()
+      };
+      return makeResponse(payload, response_format, bulletList("Wellness Profile", {
+        summary: payload.summary,
+        missing_critical: payload.missing_critical,
+        storage_path: payload.storage_path
+      }));
+    } catch (error) {
+      return makeError((error as Error).message);
+    }
+  });
+
+  server.registerTool("strava_profile_update", {
+    title: "Update Shared Wellness Profile",
+    description:
+      "Persist a partial patch to the canonical Delx Wellness profile. Requires explicit_user_intent=true after the user confirms they want to save. Rejects secret-like fields (oauth, token, api_key, password, cookie, refresh, session). Strava's GPS-redaction default is unaffected by profile changes.",
+    inputSchema: ProfileUpdateInputSchema.shape,
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }
+  }, async ({ patch, explicit_user_intent, response_format }) => {
+    if (explicit_user_intent !== true) {
+      const payload = {
+        ok: false,
+        error: "USER_ACTION_REQUIRED",
+        hint: "Set explicit_user_intent=true after the user confirms they want to save this."
+      };
+      return makeResponse(payload, response_format, bulletList("Wellness Profile Update", payload));
+    }
+    try {
+      const profile = await updateProfile(patch as Record<string, unknown>);
+      const payload = {
+        ok: true,
+        profile,
+        summary: buildProfileSummary(profile),
+        updated_fields: Object.keys(patch ?? {})
+      };
+      return makeResponse(payload, response_format, bulletList("Wellness Profile Updated", {
+        summary: payload.summary,
+        updated_fields: payload.updated_fields
+      }));
+    } catch (error) {
+      return makeError((error as Error).message);
+    }
+  });
+
+  server.registerTool("strava_onboarding", {
+    title: "Wellness Onboarding Flow",
+    description:
+      "Read-only. Return the 11-question Delx Wellness onboarding flow (en or pt-BR), the current shared profile, missing critical fields, and a cross-connector hint. Use this when the user starts a fresh wellness session and you need to fill out preferred_name, goals, devices, training context, nutrition, preferences, and safety. Strava continues to redact GPS by default — onboarding does not change that.",
+    inputSchema: OnboardingInputSchema.shape,
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+  }, async ({ locale, response_format }) => {
+    try {
+      const flow = getOnboardingFlow(locale ?? "en");
+      const profile = await getProfile();
+      const payload = {
+        ok: true,
+        flow,
+        profile,
+        summary: buildProfileSummary(profile),
+        missing_critical: missingCriticalFields(profile),
+        storage_path: getProfilePath(),
+        cross_connector_hint:
+          "This profile is shared across the Delx Wellness MCPs (e.g. wellness-nourish, wellness-cycle-coach, wellness-cgm-mcp). One onboarding pass populates context for all of them. Strava already redacts GPS latlng and route geometry by default — this profile does not change that posture; set STRAVA_GPS_INCLUDE=true or include_gps=true only when the user explicitly asks."
+      };
+      const markdown = bulletList("Wellness Onboarding", {
+        locale: flow.locale,
+        questions: `${flow.questions.length} questions`,
+        missing_critical: payload.missing_critical,
+        storage_path: payload.storage_path,
+        cross_connector_hint: payload.cross_connector_hint
+      });
+      return makeResponse(payload, response_format, markdown);
     } catch (error) {
       return makeError((error as Error).message);
     }
