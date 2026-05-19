@@ -2,6 +2,7 @@ import { URL, URLSearchParams } from "node:url";
 import { DEFAULT_LIMIT, MAX_STRAVA_LIMIT, STRAVA_API_BASE_URL, STRAVA_AUTH_URL, STRAVA_DEAUTH_URL, STRAVA_TOKEN_URL } from "../constants.js";
 import type { StravaConfig, StravaTokenSet } from "../types.js";
 import { disabledCacheStatus, StravaCache, type CacheStatus } from "./cache.js";
+import { fetchWithRetry as fetchWithRetryMiddleware } from "./http-retry.js";
 import { redactErrorMessage } from "./redaction.js";
 import { TokenStore } from "./token-store.js";
 
@@ -256,14 +257,10 @@ export class StravaClient {
   }
 
   private async fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const response = await fetch(url, init);
-      if (response.status !== 429 && response.status < 500) return response;
-      if (attempt === 2) return response;
-      const delaySeconds = response.status === 429 ? 60 : 2 ** attempt;
-      await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000));
-    }
-    throw new Error("Unreachable retry loop state");
+    return fetchWithRetryMiddleware(fetch, url, init, {
+      vendor: "strava",
+      envFlag: "STRAVA_NO_RETRY"
+    });
   }
 }
 
