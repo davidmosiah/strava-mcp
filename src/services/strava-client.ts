@@ -2,6 +2,7 @@ import { URL, URLSearchParams } from "node:url";
 import { DEFAULT_LIMIT, MAX_STRAVA_LIMIT, STRAVA_API_BASE_URL, STRAVA_AUTH_URL, STRAVA_DEAUTH_URL, STRAVA_TOKEN_URL } from "../constants.js";
 import type { StravaConfig, StravaTokenSet } from "../types.js";
 import { disabledCacheStatus, StravaCache, type CacheStatus } from "./cache.js";
+import { fetchWithCache, getCacheStats } from "./http-cache.js";
 import { fetchWithRetry as fetchWithRetryMiddleware } from "./http-retry.js";
 import { redactErrorMessage } from "./redaction.js";
 import { TokenStore } from "./token-store.js";
@@ -76,8 +77,17 @@ export class StravaClient {
   }
 
   cacheStatus(): CacheStatus {
-    if (!this.config.cacheEnabled) return disabledCacheStatus(this.config.cachePath);
-    return this.getCache().status();
+    const httpStats = getCacheStats();
+    const http_cache = {
+      size: httpStats.size,
+      hit_count: httpStats.hit_count,
+      miss_count: httpStats.miss_count,
+      hit_rate: httpStats.hit_rate,
+      default_ttl_seconds: 60,
+      bypass_env_var: "STRAVA_NO_CACHE"
+    };
+    if (!this.config.cacheEnabled) return { ...disabledCacheStatus(this.config.cachePath), http_cache };
+    return { ...this.getCache().status(), http_cache };
   }
 
   async list(path: string, params: ListParams = {}): Promise<{ records: unknown[]; next_page?: number; pages_fetched: number }> {
@@ -257,9 +267,14 @@ export class StravaClient {
   }
 
   private async fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
-    return fetchWithRetryMiddleware(fetch, url, init, {
+    const retryWrappedFetch = (u: string, i?: RequestInit) => fetchWithRetryMiddleware(fetch, u, i, {
       vendor: "strava",
       envFlag: "STRAVA_NO_RETRY"
+    });
+    return fetchWithCache(url, init, {
+      defaultTtlSeconds: 60,
+      envVarBypass: "STRAVA_NO_CACHE",
+      innerFetch: retryWrappedFetch
     });
   }
 }
