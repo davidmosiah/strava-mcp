@@ -1,5 +1,5 @@
 export const SERVER_NAME = "strava-mcp-server";
-export const SERVER_VERSION = "0.4.4";
+export const SERVER_VERSION = "0.4.5";
 export const NPM_PACKAGE_NAME = "strava-mcp-unofficial";
 export const PINNED_NPM_PACKAGE = `${NPM_PACKAGE_NAME}@${SERVER_VERSION}`;
 
