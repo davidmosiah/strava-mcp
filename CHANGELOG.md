@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.6 - 2026-05-29
+
+### Changed
+
+- **README Quickstart rewrite** — replaced "Setup in 60 seconds" with a numbered install → OAuth → verify → first-call flow, including real captured terminal output for `auth --no-open`, `doctor` (READY), and a `strava_demo` first call. The demo step lets new users see the exact response shape and wire prompts before connecting a live Strava account. Docs-only; no code or tool behavior changes.
+
 ## 0.4.3 - 2026-05-20
 
 ### Added

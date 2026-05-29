@@ -49,23 +49,74 @@ Strava holds the long memory of your training — every ride, run, swim, segment
 
 This package does the OAuth dance locally, throttles under Strava's per-app limits, redacts GPS lat/lng unless you explicitly opt in, and exposes Strava through the Model Context Protocol. Any MCP-compatible agent gets your training context with one config snippet. Tokens never leave your machine.
 
-## Setup in 60 seconds
+## Quickstart
 
-You'll need a Strava app ([create one here](https://www.strava.com/settings/api)) with redirect URI `http://127.0.0.1:3000/callback`.
+From zero to your first agent call in about a minute. You only need a Strava app ([create one here](https://www.strava.com/settings/api)) with redirect URI `http://127.0.0.1:3000/callback`.
+
+**1. Paste your app's client id + secret** (interactive, stored at `~/.strava-mcp/config.json` with `0600`):
 
 ```bash
-npx -y strava-mcp-unofficial setup    # interactive: paste client id + secret
-npx -y strava-mcp-unofficial auth     # opens browser, captures the OAuth code
-npx -y strava-mcp-unofficial doctor   # verifies you're ready
+npx -y strava-mcp-unofficial setup
 ```
 
-`doctor` should report these scopes as granted:
+**2. Authorize Strava.** `auth` opens your browser; `--no-open` prints the URL so you can paste it yourself (handy on a headless box). Tokens are saved locally — the command never prints them:
+
+```console
+$ npx -y strava-mcp-unofficial auth --no-open
+Strava MCP · Authorization
+
+Open this URL manually:
+  https://www.strava.com/oauth/authorize?client_id=12345&redirect_uri=http%3A%2F%2F127.0.0.1%3A3000%2Fcallback&response_type=code&approval_prompt=auto&scope=read%2Cactivity%3Aread_all%2Cprofile%3Aread_all&state=aa38f29b
+
+Steps
+  1. Approve access in the browser tab that opens.
+  2. Strava will redirect to the local callback.
+  3. Tokens are saved locally; this command never prints them.
+
+Waiting for callback...
+```
+
+**3. Verify you're ready** — `doctor` confirms scopes and setup without calling Strava:
+
+```console
+$ npx -y strava-mcp-unofficial doctor
+Strava MCP · Doctor
+Status: READY ✓
+
+Checks
+  ✓  Node.js >=20
+  ✓  Env vars
+  ✓  Local config
+  ✓  Automatic auth redirect
+  ✓  Token file
+  ✓  Token permissions
+  ✓  Refresh token
+  ✓  OAuth scopes
+  ·  Privacy mode
+  ·  Cache
+
+Next steps
+  1. Ready. Add this MCP server to your agent and start with strava_daily_summary.
+```
+
+If `OAuth scopes` shows a `✗`, re-run `auth` and approve `activity:read_all profile:read_all read`.
+
+**4. Make a first call — no live account required.** Ask your agent to run `strava_demo`. It returns realistic, synthetic payloads (every field tagged `is_demo: true`) so you can wire prompts before connecting real data:
 
 ```text
-read activity:read_all profile:read_all
+> Call strava_demo and summarize my week.
+
+# Strava Demo
+
+- **is_demo**: true
+- **recent_sessions**: 4
+- **average_heart_rate**: 138
+- **recommendation**: Steady aerobic block — one easy 5km, one tempo 8km, one long 12km, one recovery ride. Hold pace before adding intensity next week.
 ```
 
-If only `read` is granted, re-run `auth`. Then add this to your MCP client config:
+Swap `strava_demo` for `strava_daily_summary` / `strava_weekly_summary` and the same shape is filled with your real Strava data.
+
+**5. Wire it into your MCP client:**
 
 ```json
 {
@@ -78,7 +129,7 @@ If only `read` is granted, re-run `auth`. Then add this to your MCP client confi
 }
 ```
 
-For Claude Desktop, run `setup --client claude` and the snippet is written for you.
+For Claude Desktop, run `setup --client claude` and the snippet is written for you. For Hermes, see [Hermes / remote setup](#hermes--remote-setup) below.
 
 ## Try it with your agent
 
