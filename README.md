@@ -210,7 +210,9 @@ Each accepts `timezone` (IANA, default `UTC`).
 
 - OAuth tokens are stored in `~/.strava-mcp/tokens.json` with `0600` permissions and are never returned by tools.
 - Write/upload scopes are **not** requested by default — read-only by design.
-- GPS lat/lng is removed in `summary` mode, limited in `structured` mode, and only included with explicit `include_gps=true` or `raw` mode.
+- GPS lat/lng and route geometry are recursively removed in `summary` and `structured` modes, and only included with explicit `include_gps=true` for stream calls or `raw` mode.
+- Structured mode otherwise preserves complete upstream physiological records and future Strava fields.
+- Activity `after` / `before` filters retain instant semantics when converted from timezone-aware ISO date-times to Strava epoch seconds; invalid ranges fail before HTTP.
 - Route geometry is also redacted unless raw mode is explicitly requested.
 - The MCP client never sees access or refresh tokens.
 - This is **not medical advice**. The server exposes user-authorized data for personal AI workflows, not diagnosis or training prescription.

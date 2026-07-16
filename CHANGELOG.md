@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.7 - 2026-07-16
+
+### Fixed
+
+- Preserve complete upstream activity, route, club, gear and physiology fields in structured mode, including future Strava additions, while recursively removing GPS and secret-bearing values.
+- Convert timezone-aware ISO filters to Strava epoch seconds by instant and reject invalid or reversed ranges before any HTTP request.
+- Add an executable HTTP-boundary regression suite and prove summary failures propagate instead of becoming silent partial success.
+- Raise the transitive Hono override to 4.12.30 so production installs pass `npm audit --omit=dev` with zero known vulnerabilities.
+
 ## 0.4.6 - 2026-05-29
 
 ### Changed

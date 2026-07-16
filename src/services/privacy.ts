@@ -36,10 +36,10 @@ export function applyPrivacy(endpoint: string, payload: unknown, mode: PrivacyMo
 export function normalizeRecord(endpoint: string, record: unknown, mode: PrivacyMode): unknown {
   if (!isObject(record)) return record;
   if (endpoint === "/athlete") return normalizeAthlete(record, mode);
-  if (endpoint.includes("/athlete/zones")) return record;
-  if (endpoint.includes("/athletes/") && endpoint.includes("/stats")) return record;
+  if (endpoint.includes("/athlete/zones")) return mode === "summary" ? record : removeGps(record);
+  if (endpoint.includes("/athletes/") && endpoint.includes("/stats")) return mode === "summary" ? record : removeGps(record);
   if (endpoint.includes("/activities") && endpoint.includes("/streams")) return normalizeStreams(record, mode, false);
-  if (endpoint.includes("/activities") && endpoint.includes("/zones")) return record;
+  if (endpoint.includes("/activities") && endpoint.includes("/zones")) return mode === "summary" ? record : removeGps(record);
   if (endpoint.includes("/activities")) return normalizeActivity(record, mode);
   if (endpoint.includes("/routes")) return normalizeRoute(record, mode);
   if (endpoint.includes("/clubs")) return normalizeClub(record, mode);
@@ -76,7 +76,7 @@ function normalizeAthlete(record: Record<string, unknown>, mode: PrivacyMode): R
     summit: record.summit
   });
   if (mode === "summary") return base;
-  return pickDefined({
+  return mergeStructured(record, {
     ...base,
     lastname: record.lastname,
     created_at: record.created_at,
@@ -114,7 +114,7 @@ function normalizeActivity(record: Record<string, unknown>, mode: PrivacyMode): 
     private: record.private
   });
   if (mode === "summary") return base;
-  return pickDefined({
+  return mergeStructured(record, {
     ...base,
     achievement_count: record.achievement_count,
     kudos_count: record.kudos_count,
@@ -148,7 +148,7 @@ function normalizeRoute(record: Record<string, unknown>, mode: PrivacyMode): Rec
     starred: record.starred
   });
   if (mode === "summary") return base;
-  return pickDefined({
+  return mergeStructured(record, {
     ...base,
     created_at: record.created_at,
     updated_at: record.updated_at,
@@ -161,21 +161,36 @@ function normalizeRoute(record: Record<string, unknown>, mode: PrivacyMode): Rec
 function normalizeClub(record: Record<string, unknown>, mode: PrivacyMode): Record<string, unknown> {
   const base = pickDefined({ id: record.id, name: record.name, sport_type: record.sport_type, member_count: record.member_count, private: record.private });
   if (mode === "summary") return base;
-  return pickDefined({ ...base, city: record.city, state: record.state, country: record.country, verified: record.verified, url: record.url });
+  return mergeStructured(record, { ...base, city: record.city, state: record.state, country: record.country, verified: record.verified, url: record.url });
 }
 
 function normalizeGear(record: Record<string, unknown>, mode: PrivacyMode): Record<string, unknown> {
   const base = pickDefined({ id: record.id, name: record.name, distance: record.distance, primary: record.primary });
   if (mode === "summary") return base;
-  return pickDefined({ ...base, brand_name: record.brand_name, model_name: record.model_name, description: record.description, retired: record.retired });
+  return mergeStructured(record, { ...base, brand_name: record.brand_name, model_name: record.model_name, description: record.description, retired: record.retired });
 }
 
 function removeGps(record: Record<string, unknown>): Record<string, unknown> {
-  const clone = { ...record };
-  for (const key of ["start_latlng", "end_latlng", "location_city", "location_state", "location_country", "map", "polyline", "summary_polyline"]) {
-    delete clone[key];
-  }
-  return clone;
+  return sanitizeValue(record) as Record<string, unknown>;
+}
+
+function mergeStructured(record: Record<string, unknown>, normalized: Record<string, unknown>): Record<string, unknown> {
+  return pickDefined({ ...normalized, ...removeGps(record) });
+}
+
+function sanitizeValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sanitizeValue);
+  if (!isObject(value)) return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !/^(start_latlng|end_latlng|location_city|location_state|location_country|map|polyline|summary_polyline|gps|latlng|coordinates)$/i.test(key))
+      .map(([key, nestedValue]) => [
+        key,
+        /^(access[_-]?token|refresh[_-]?token|id[_-]?token|client[_-]?secret|authorization|password|api[_-]?key)$/i.test(key)
+          ? "[REDACTED]"
+          : sanitizeValue(nestedValue),
+      ]),
+  );
 }
 
 function summarizeMap(value: unknown): unknown {

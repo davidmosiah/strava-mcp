@@ -91,6 +91,11 @@ export class StravaClient {
   }
 
   async list(path: string, params: ListParams = {}): Promise<{ records: unknown[]; next_page?: number; pages_fetched: number }> {
+    const after = toEpochSeconds(params.after, "after");
+    const before = toEpochSeconds(params.before, "before");
+    if (after !== undefined && before !== undefined && after > before) {
+      throw new Error("Strava after must not be later than before");
+    }
     const limit = Math.min(Math.max(params.limit ?? DEFAULT_LIMIT, 1), MAX_STRAVA_LIMIT);
     const maxPages = params.all_pages ? Math.max(1, params.max_pages ?? 1) : 1;
     let page = Math.max(params.page ?? 1, 1);
@@ -99,8 +104,8 @@ export class StravaClient {
 
     while (pages < maxPages) {
       const payload = await this.get(path, {
-        after: toEpochSeconds(params.after),
-        before: toEpochSeconds(params.before),
+        after,
+        before,
         page,
         per_page: limit
       });
@@ -279,10 +284,13 @@ export class StravaClient {
   }
 }
 
-function toEpochSeconds(value?: string): number | undefined {
+function toEpochSeconds(value: string | undefined, field: "after" | "before"): number | undefined {
   if (!value) return undefined;
   const ms = Date.parse(value);
-  return Number.isFinite(ms) ? Math.floor(ms / 1000) : undefined;
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/i.test(value) || !Number.isFinite(ms)) {
+    throw new Error(`Invalid Strava ${field} date-time: use ISO 8601 with a timezone`);
+  }
+  return Math.floor(ms / 1000);
 }
 
 function cleanParams(input: Record<string, string | number | boolean | undefined>): Record<string, string | number | boolean> {

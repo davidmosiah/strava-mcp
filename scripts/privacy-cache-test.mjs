@@ -25,6 +25,14 @@ assert.equal(structured.average_heartrate, 142);
 assert.equal(structured.start_latlng, undefined);
 assert.equal(structured.map, undefined);
 
+const futureStructured = applyPrivacy('/activities/123', {
+  ...activity,
+  futureMetrics: { runningPowerBalance: 51 },
+  physiologicalSnapshot: { cardiacDrift: 4.2 },
+}, 'structured');
+assert.deepEqual(futureStructured.futureMetrics, { runningPowerBalance: 51 });
+assert.deepEqual(futureStructured.physiologicalSnapshot, { cardiacDrift: 4.2 });
+
 const summary = applyPrivacy('/activities/123', activity, 'summary');
 assert.equal(summary.distance, 42000);
 assert.equal(summary.weighted_average_watts, 210);

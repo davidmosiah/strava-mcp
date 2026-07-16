@@ -85,4 +85,14 @@ assertNoGpsKeys(context, 'context');
 // downstream sees, which is the JSON shape.
 assertNoGpsKeys(JSON.parse(JSON.stringify(context)), 'context_json');
 
+const failingClient = {
+  async list() {
+    throw new Error('synthetic Strava activity failure');
+  },
+};
+await assert.rejects(
+  buildDailySummary(failingClient, { days: 7, timezone: 'UTC' }),
+  /synthetic Strava activity failure/,
+);
+
 console.log(JSON.stringify({ ok: true, daily: daily.kind, weekly: weekly.kind, privacy_keys_absent: FORBIDDEN_GPS_KEYS.length }, null, 2));
