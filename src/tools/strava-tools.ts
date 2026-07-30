@@ -514,12 +514,24 @@ export function registerStravaTools(server: McpServer): void {
 
   server.registerTool("strava_revoke_access", {
     title: "Revoke Strava OAuth Access",
-    description: "Revoke the current Strava OAuth access grant and delete the local token file. Use only when the user explicitly wants to disconnect Strava.",
-    inputSchema: ResponseOnlyInputSchema.shape,
+    description: "Revoke the current Strava OAuth access grant and delete the local token file. Use only when the user explicitly wants to disconnect Strava. Gated by explicit_user_intent: true (requires explicit user intent).",
+    inputSchema: {
+      explicit_user_intent: z
+        .boolean()
+        .optional()
+        .describe("Must be true after the user explicitly asked to disconnect. Prevents agents from revoking autonomously."),
+      response_format: z.enum(["markdown", "json"]).default("markdown")
+    },
     outputSchema: RevokeAccessOutputSchema.shape,
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
-  }, async ({ response_format }) => {
+  }, async ({ explicit_user_intent, response_format }) => {
     try {
+      if (explicit_user_intent !== true) {
+        return makeError(
+          "USER_ACTION_REQUIRED: explicit_user_intent must be true to revoke access. Ask the user to confirm disconnect first."
+        );
+      }
+
       const result = await client().revokeAccess();
       const output = { ...result, note: "Strava access was revoked and local tokens were removed. Re-authorize before future API calls." };
       return makeResponse(output, response_format, bulletList("Strava Access Revoked", output));
