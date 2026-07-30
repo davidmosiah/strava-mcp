@@ -116,7 +116,15 @@ export class StravaClient {
       page += 1;
     }
 
-    return { records, next_page: records.length && records.length % limit === 0 ? page + (pages === 0 ? 0 : 0) : undefined, pages_fetched: pages };
+    // When a full page is returned there may be more data. Report the next
+    // Strava page number as startPage + pagesFetched (not the loop cursor,
+    // which is only advanced when all_pages keeps iterating).
+    const startPage = Math.max(params.page ?? 1, 1);
+    return {
+      records,
+      next_page: records.length && records.length % limit === 0 ? startPage + pages : undefined,
+      pages_fetched: pages
+    };
   }
 
   private extractCode(input: string): string {

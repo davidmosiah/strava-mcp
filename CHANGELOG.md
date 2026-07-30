@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.8 - 2026-07-30
+
+### Fixed
+
+- **Pagination `next_page` off-by-one** — a full single page used to report `next_page` equal to the page just fetched (`page + (pages === 0 ? 0 : 0)` is a no-op). Agents following `next_page`/`has_more` re-requested the same page forever. Now `next_page = startPage + pages_fetched` (e.g. page 1 full → 2). Covered by `endpoint-contract-test.mjs`.
+
 ## 0.4.7 - 2026-07-16
 
 ### Fixed
