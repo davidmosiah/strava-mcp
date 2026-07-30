@@ -8,6 +8,11 @@ export const PrivacyModeValueSchema = z.enum(["summary", "structured", "raw"]);
 export const PrivacyModeSchema = PrivacyModeValueSchema.optional()
   .describe("Optional per-call privacy override. Defaults to STRAVA_PRIVACY_MODE or structured. raw returns upstream Strava JSON. summary removes GPS/map details.");
 
+export const ExplicitPrivacyIntentSchema = z
+  .boolean()
+  .optional()
+  .describe("Required true when privacy_mode=raw or include_gps=true (agent escalation of redaction).");
+
 export const DateTimeSchema = z.string()
   .datetime({ offset: true })
   .optional()
@@ -23,12 +28,14 @@ export const CollectionInputSchema = z.object({
   max_pages: z.number().int().min(1).max(MAX_PAGES).default(DEFAULT_MAX_PAGES)
     .describe("Maximum pages to fetch when all_pages is true."),
   privacy_mode: PrivacyModeSchema,
+  explicit_user_intent: ExplicitPrivacyIntentSchema,
   response_format: ResponseFormatSchema
 }).strict();
 
 export const IdInputSchema = z.object({
   id: z.union([z.string().min(1), z.number().int().positive()]).describe("Strava resource id."),
   privacy_mode: PrivacyModeSchema,
+  explicit_user_intent: ExplicitPrivacyIntentSchema,
   response_format: ResponseFormatSchema
 }).strict();
 
@@ -36,14 +43,16 @@ export const ActivityStreamsInputSchema = z.object({
   id: z.union([z.string().min(1), z.number().int().positive()]).describe("Strava activity id."),
   keys: z.array(z.enum(["time", "distance", "latlng", "altitude", "velocity_smooth", "heartrate", "cadence", "watts", "temp", "moving", "grade_smooth"])).default(["time", "distance", "heartrate", "cadence", "watts", "altitude"])
     .describe("Stream keys to request. latlng is withheld unless privacy_mode=raw or include_gps=true."),
-  include_gps: z.boolean().default(false).describe("Allow latlng stream in structured output. Raw mode always returns requested upstream payload."),
+  include_gps: z.boolean().default(false).describe("Allow latlng stream in structured output. Requires explicit_user_intent=true. Raw mode also requires explicit_user_intent=true."),
   resolution: z.enum(["low", "medium", "high"]).optional().describe("Optional Strava stream resolution."),
   privacy_mode: PrivacyModeSchema,
+  explicit_user_intent: ExplicitPrivacyIntentSchema,
   response_format: ResponseFormatSchema
 }).strict();
 
 export const SimpleReadInputSchema = z.object({
   privacy_mode: PrivacyModeSchema,
+  explicit_user_intent: ExplicitPrivacyIntentSchema,
   response_format: ResponseFormatSchema
 }).strict();
 

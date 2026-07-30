@@ -72,7 +72,7 @@ function registerCollectionTool(server: McpServer, name: string, title: string, 
       try {
         const config = getConfig();
         const api = new StravaClient(config);
-        const privacyMode = resolvePrivacyMode(config, params.privacy_mode);
+        const privacyMode = resolvePrivacyMode(config, params.privacy_mode, { explicit_user_intent: (params as { explicit_user_intent?: boolean }).explicit_user_intent, include_gps: (params as { include_gps?: boolean }).include_gps });
         const resolvedEndpoint = typeof endpoint === "function" ? await endpoint(api) : endpoint;
         const result = await api.list(resolvedEndpoint, params);
         const records = applyPrivacy(resolvedEndpoint, { records: result.records }, privacyMode) as { records: unknown[] };
@@ -106,7 +106,7 @@ function registerGetByIdTool(server: McpServer, name: string, title: string, end
     async (params) => {
       try {
         const config = getConfig();
-        const privacyMode = resolvePrivacyMode(config, params.privacy_mode);
+        const privacyMode = resolvePrivacyMode(config, params.privacy_mode, { explicit_user_intent: (params as { explicit_user_intent?: boolean }).explicit_user_intent, include_gps: (params as { include_gps?: boolean }).include_gps });
         const endpoint = endpointBuilder(params.id);
         const data = applyPrivacy(endpoint, await new StravaClient(config).get(endpoint), privacyMode);
         return makeResponse({ endpoint, privacy_mode: privacyMode, data }, params.response_format, bulletList(title, { endpoint, privacy_mode: privacyMode, data: JSON.stringify(data) }));
@@ -360,11 +360,11 @@ export function registerStravaTools(server: McpServer): void {
       outputSchema: EndpointDataOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
     },
-    async ({ response_format, privacy_mode }) => {
+    async ({ response_format, privacy_mode, explicit_user_intent }) => {
       try {
         const config = getConfig();
         const endpoint = "/athlete";
-        const privacyMode = resolvePrivacyMode(config, privacy_mode);
+        const privacyMode = resolvePrivacyMode(config, privacy_mode, { explicit_user_intent });
         const data = applyPrivacy(endpoint, await new StravaClient(config).get(endpoint), privacyMode);
         return makeResponse({ endpoint, privacy_mode: privacyMode, data }, response_format, bulletList("Strava Athlete", data as Record<string, unknown>));
       } catch (error) {
@@ -382,11 +382,11 @@ export function registerStravaTools(server: McpServer): void {
       outputSchema: EndpointDataOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
     },
-    async ({ response_format, privacy_mode }) => {
+    async ({ response_format, privacy_mode, explicit_user_intent }) => {
       try {
         const config = getConfig();
         const endpoint = "/athlete/zones";
-        const privacyMode = resolvePrivacyMode(config, privacy_mode);
+        const privacyMode = resolvePrivacyMode(config, privacy_mode, { explicit_user_intent });
         const data = applyPrivacy(endpoint, await new StravaClient(config).get(endpoint), privacyMode);
         return makeResponse({ endpoint, privacy_mode: privacyMode, data }, response_format, bulletList("Strava Zones", { data: JSON.stringify(data) }));
       } catch (error) {
@@ -404,13 +404,13 @@ export function registerStravaTools(server: McpServer): void {
       outputSchema: EndpointDataOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
     },
-    async ({ response_format, privacy_mode }) => {
+    async ({ response_format, privacy_mode, explicit_user_intent }) => {
       try {
         const config = getConfig();
         const api = new StravaClient(config);
         const id = await athleteId(api);
         const endpoint = `/athletes/${id}/stats`;
-        const privacyMode = resolvePrivacyMode(config, privacy_mode);
+        const privacyMode = resolvePrivacyMode(config, privacy_mode, { explicit_user_intent });
         const data = applyPrivacy(endpoint, await api.get(endpoint), privacyMode);
         return makeResponse({ endpoint, privacy_mode: privacyMode, data }, response_format, bulletList("Strava Athlete Stats", { athlete_id: id, data: JSON.stringify(data) }));
       } catch (error) {
@@ -440,7 +440,7 @@ export function registerStravaTools(server: McpServer): void {
     async (params) => {
       try {
         const config = getConfig();
-        const privacyMode = resolvePrivacyMode(config, params.privacy_mode);
+        const privacyMode = resolvePrivacyMode(config, params.privacy_mode, { explicit_user_intent: (params as { explicit_user_intent?: boolean }).explicit_user_intent, include_gps: (params as { include_gps?: boolean }).include_gps });
         const keys = params.keys.filter((key) => key !== "latlng" || params.include_gps || privacyMode === "raw");
         const endpoint = `/activities/${params.id}/streams`;
         const raw = await new StravaClient(config).get(endpoint, {
