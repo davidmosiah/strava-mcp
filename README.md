@@ -101,7 +101,7 @@ Next steps
 
 If `OAuth scopes` shows a `✗`, re-run `auth` and approve `activity:read_all profile:read_all read`.
 
-**4. Make a first call — no live account required.** Ask your agent to run `strava_demo`. It returns realistic, synthetic payloads (every field tagged `is_demo: true`) so you can wire prompts before connecting real data:
+**4. Make a first call — no live account required.** Ask your agent to run `strava_demo`. It returns realistic, synthetic payloads (tagged `is_demo: true`) so you can wire prompts before connecting real data:
 
 ```text
 > Call strava_demo and summarize my week.
@@ -109,12 +109,13 @@ If `OAuth scopes` shows a `✗`, re-run `auth` and approve `activity:read_all pr
 # Strava Demo
 
 - **is_demo**: true
-- **recent_sessions**: 4
-- **average_heart_rate**: 138
-- **recommendation**: Steady aerobic block — one easy 5km, one tempo 8km, one long 12km, one recovery ride. Hold pace before adding intensity next week.
+- **recent_sessions**: 3
+- **load_classification**: moderate
+- **primary_signal**: Recent Strava load is manageable; use intent and consistency as the main lever.
+- **recommended_handoff**: exercise_catalog_recommend_session
 ```
 
-Swap `strava_demo` for `strava_daily_summary` / `strava_weekly_summary` and the same shape is filled with your real Strava data.
+Call it with `response_format: "json"` for the full shapes. The `sample` block mirrors `strava_daily_summary`, `strava_training_context` and `strava_list_activities` key-for-key — `npm run test:demo-contract` runs the real builders over `fixtures/strava-activities.mjs` and fails the build if the demo ever invents a field or omits one. Swap `strava_demo` for the real tool and the same shape arrives filled with your Strava data.
 
 **5. Wire it into your MCP client:**
 

@@ -31,6 +31,8 @@ import {
 import { buildPrivacyAudit } from "../services/audit.js";
 import { buildAgentManifest, formatAgentManifestMarkdown } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
+import { buildCollectionOutput } from "../services/collection.js";
+import { buildDemoPayload } from "../services/demo.js";
 import { buildDataInventory, formatInventoryMarkdown } from "../services/inventory.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
 import { getConfig } from "../services/config.js";
@@ -75,17 +77,8 @@ function registerCollectionTool(server: McpServer, name: string, title: string, 
         const privacyMode = resolvePrivacyMode(config, params.privacy_mode, { explicit_user_intent: (params as { explicit_user_intent?: boolean }).explicit_user_intent, include_gps: (params as { include_gps?: boolean }).include_gps });
         const resolvedEndpoint = typeof endpoint === "function" ? await endpoint(api) : endpoint;
         const result = await api.list(resolvedEndpoint, params);
-        const records = applyPrivacy(resolvedEndpoint, { records: result.records }, privacyMode) as { records: unknown[] };
-        const output = {
-          endpoint: resolvedEndpoint,
-          privacy_mode: privacyMode,
-          count: records.records.length,
-          records: records.records,
-          next_page: result.next_page,
-          has_more: Boolean(result.next_page),
-          pages_fetched: result.pages_fetched
-        };
-        return makeResponse(output, params.response_format, formatCollection(title, records.records, output));
+        const output = buildCollectionOutput(resolvedEndpoint, result, privacyMode);
+        return makeResponse(output, params.response_format, formatCollection(title, output.records, output));
       } catch (error) {
         return makeError((error as Error).message);
       }
@@ -251,55 +244,13 @@ export function registerStravaTools(server: McpServer): void {
       }
     },
     async ({ response_format }) => {
-      const today = new Date().toISOString().slice(0, 10);
-      const yesterday = new Date(Date.now() - 86_400_000).toISOString();
-      const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000).toISOString();
-      const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000).toISOString();
-      const payload = {
-        ok: true,
-        is_demo: true,
-        sample: {
-          strava_daily_summary: {
-            date: today,
-            activities: 1,
-            total_distance_km: 5.0,
-            total_duration_min: 28,
-            sport_mix: { Run: 1 },
-            intensity: { average_heart_rate: 142, max_heart_rate: 168, suffer_score: 32 },
-            elevation_gain_m: 42,
-          },
-          strava_training_context: {
-            window: "last_7d",
-            sessions: 4,
-            total_distance_km: 38.6,
-            total_duration_min: 215,
-            sport_mix: { Run: 3, Ride: 1 },
-            average_intensity: "moderate",
-            average_heart_rate: 138,
-            load_band: "moderate",
-            recommendation: "Steady aerobic block — one easy 5km, one tempo 8km, one long 12km, one recovery ride. Hold pace before adding intensity next week.",
-          },
-          strava_list_activities: {
-            count: 4,
-            records: [
-              { id: 1100000001, name: "Morning easy run", sport_type: "Run", start_date: yesterday, distance_m: 5012, moving_time_s: 1680, average_heartrate: 142, suffer_score: 32 },
-              { id: 1100000002, name: "Tempo intervals", sport_type: "Run", start_date: twoDaysAgo, distance_m: 8024, moving_time_s: 2640, average_heartrate: 165, suffer_score: 78 },
-              { id: 1100000003, name: "Recovery spin", sport_type: "Ride", start_date: threeDaysAgo, distance_m: 18500, moving_time_s: 2700, average_heartrate: 118, suffer_score: 22 },
-              { id: 1100000004, name: "Long run", sport_type: "Run", start_date: threeDaysAgo, distance_m: 12150, moving_time_s: 3960, average_heartrate: 138, suffer_score: 55 },
-            ],
-          },
-        },
-        notes: [
-          "All sample data is synthetic; tagged with is_demo=true.",
-          "Real calls return live data from the Strava v3 API after OAuth setup.",
-          "GPS latlng and route geometry are omitted by default; the demo payload mirrors that defensive shape.",
-        ],
-      };
+      const payload = buildDemoPayload();
       const markdown = bulletList("Strava Demo", {
         is_demo: true,
-        recent_sessions: 4,
-        average_heart_rate: 138,
-        recommendation: payload.sample.strava_training_context.recommendation,
+        recent_sessions: payload.sample.strava_daily_summary.training_load.stats.activity_count,
+        load_classification: payload.sample.strava_daily_summary.training_load.classification,
+        primary_signal: payload.sample.strava_daily_summary.diagnostic.primary_signal,
+        recommended_handoff: payload.sample.strava_training_context.recommended_handoff.tool,
       });
       return makeResponse(payload, response_format, markdown);
     }

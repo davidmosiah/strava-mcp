@@ -1,3 +1,44 @@
+## 0.5.0 - 2026-08-01
+
+### Fixed
+
+- `strava_demo` returned examples that did not match any tool this server has.
+  An agent that wired its parser to the demo — the tool's entire purpose — got
+  it wrong in three ways:
+  - `strava_daily_summary`: every one of the 11 advertised key paths was
+    invented (`date`, `activities`, `sport_mix`, `intensity.*`,
+    `total_distance_km`, `total_duration_min`, `elevation_gain_m`), and all 41
+    real ones were missing (`kind`, `window`, `data_quality`, `latest_activity`,
+    `training_load.stats.top_sports[]`, `diagnostic`, `safety`).
+  - `strava_training_context`: 11 invented key paths, 24 real ones missing. The
+    worst was `load_band: "moderate"` — the real field is
+    `recent_training_load`, and its vocabulary is `low|normal|high|unknown`, so
+    an agent branching on `"moderate"` would never match even after finding the
+    right key. Also missing: `context_contract_version`, `privacy.*`,
+    `recommended_handoff.*`, `telegram_summary`.
+  - `strava_list_activities`: records advertised `distance_m` / `moving_time_s`,
+    which the server never emits (they are `distance` / `moving_time`), and the
+    whole envelope — `endpoint`, `privacy_mode`, `next_page`, `has_more`,
+    `pages_fetched` — plus 47 record fields were absent.
+  The demo now shows the real shapes, including the default `structured`
+  privacy mode for the activity list.
+
+### Added
+
+- `npm run test:demo-contract` (in `npm test`): runs the real
+  `buildDailySummary` / `buildTrainingContext` / `buildCollectionOutput` over
+  `fixtures/strava-activities.mjs` and fails in both directions — a key the demo
+  invents, and a contract key the demo omits. Arrays compare as the union of
+  their elements, so a page mixing rides and runs describes the whole shape. The
+  fixture carries GPS fields on purpose, so the gate also proves they never
+  reach the agent.
+
+### Changed
+
+- Demo payload moved to `src/services/demo.ts` and the collection envelope to
+  `src/services/collection.ts`, so the gate exercises the same code path the
+  tool does instead of re-implementing it.
+
 ## 0.4.11 - 2026-07-30
 
 ### Added / Fixed
