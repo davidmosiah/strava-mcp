@@ -4,7 +4,7 @@ export const AGENT_CLIENTS = ["generic", "claude", "cursor", "windsurf", "hermes
 export type AgentClientName = typeof AGENT_CLIENTS[number];
 
 export const STRAVA_TOOL_NAMES = [
-  "strava_agent_manifest", "strava_cache_status", "strava_capabilities",
+  "strava_activity_series", "strava_agent_manifest", "strava_cache_status", "strava_capabilities",
   "strava_connection_status", "strava_daily_summary", "strava_data_inventory",
   "strava_demo", "strava_exchange_code", "strava_get_activity",
   "strava_get_activity_streams", "strava_get_activity_zones", "strava_get_athlete",
@@ -21,7 +21,8 @@ export const STRAVA_RESOURCE_URIS = [
 ];
 
 export const HERMES_DIRECT_TOOLS = [
-  "mcp_strava_strava_agent_manifest", "mcp_strava_strava_capabilities", "mcp_strava_strava_connection_status",
+  "mcp_strava_strava_activity_series", "mcp_strava_strava_agent_manifest", "mcp_strava_strava_capabilities",
+  "mcp_strava_strava_connection_status",
   "mcp_strava_strava_daily_summary", "mcp_strava_strava_data_inventory", "mcp_strava_strava_get_activity",
   "mcp_strava_strava_get_activity_streams", "mcp_strava_strava_list_activities", "mcp_strava_strava_privacy_audit",
   "mcp_strava_strava_training_context", "mcp_strava_strava_weekly_summary"
@@ -178,6 +179,7 @@ export function hermesSkillMarkdown(): string {
     "1. `mcp_strava_strava_connection_status`",
     "2. `mcp_strava_strava_daily_summary` for today's context",
     "3. `mcp_strava_strava_weekly_summary` for load trends",
-    "4. `mcp_strava_strava_get_activity_streams` only for a specific activity investigation"
+    "4. `mcp_strava_strava_activity_series` for a bounded agent-safe series on one activity metric",
+    "5. `mcp_strava_strava_get_activity_streams` only when you need raw multi-key streams or GPS with explicit consent"
   ].join("\n");
 }

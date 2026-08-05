@@ -1,3 +1,33 @@
+## 0.6.0 - 2026-08-05
+
+### Added
+
+- **`strava_activity_series`** — bounded, self-describing time-series for one
+  activity metric under the shared **`agent-safe-series/v1`** contract (same
+  shape as Garmin MCP and Mi Fitness Data Bridge / Kindred; design thread
+  [garmin-mcp#19](https://github.com/davidmosiah/garmin-mcp/issues/19)):
+  - Exact `stats` (avg/min/max/p25/p50/p75 + `percentile_method`) on
+    **full-resolution** samples; returned `points[]` hard-capped (default 400,
+    server max 500) via fixed time-bucket means.
+  - `start_time`, `t_unit: "seconds_from_start"`, `requested_resolution_seconds`,
+    honest `downsampled` / `source_points` / `method`.
+  - `data_quality.coverage_anchor`: `nominal_duration` (from activity
+    `elapsed_time`) | `sample_span` — head/tail sensor drops no longer look like
+    a shorter, fully-sampled workout (Kindred duration-anchored coverage).
+  - `time_in_zone.reference_source`: `caller_provided` |
+    `activity_recorded_max` | `observed_max`.
+  - GPS/latlng never enters the series tool; stays behind
+    `strava_get_activity_streams` + `include_gps` escalation.
+  - Synthetic 3h fixture + `scripts/activity-series-test.mjs` (same ride profile
+    as garmin-mcp).
+
+### Changed
+
+- Prefer `strava_activity_series` over raw streams in agent guidance
+  (capabilities, Hermes skill, stream investigator prompt, FAQ).
+- `strava_get_activity_streams` description points agents at the series tool for
+  context-safe work; raw multi-key / GPS path unchanged.
+
 ## 0.5.0 - 2026-08-01
 
 ### Fixed

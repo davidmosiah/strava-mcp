@@ -51,17 +51,17 @@ Requirements:
     "strava_activity_stream_investigator",
     {
       title: "Strava Activity Stream Investigator",
-      description: "Investigate one Strava activity using streams while respecting GPS privacy.",
+      description: "Investigate one Strava activity with agent-safe series (prefer series over raw streams) while respecting GPS privacy.",
       argsSchema: { activity_id: z.string().describe("Strava activity id"), include_gps: z.string().default("false") }
     },
-    ({ activity_id, include_gps }) => userPrompt(`Call strava_get_activity with id=${activity_id} and response_format=json. Then call strava_get_activity_streams with id=${activity_id}, include_gps=${include_gps === "true" ? "true" : "false"}, response_format=json.
+    ({ activity_id, include_gps }) => userPrompt(`Call strava_get_activity with id=${activity_id} and response_format=json. Then call strava_activity_series with id=${activity_id}, metric=heart_rate, response_format=json (agent-safe-series/v1 — exact stats + bounded points). Only call strava_get_activity_streams if you need multi-key raw streams; set include_gps=${include_gps === "true" ? "true" : "false"} and only with explicit user consent for GPS.
 
 Return:
 - what the session appears to be training
-- pacing / HR / power drift if available
+- pacing / HR / power drift if available (use series stats and notes)
 - 2-4 technical takeaways
 - whether GPS detail was used
 
-Do not expose raw GPS unless the user explicitly requested it.`)
+Do not expose raw GPS unless the user explicitly requested it. Prefer series over dumping full streams into context.`)
   );
 }

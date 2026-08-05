@@ -1,6 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
+  ActivitySeriesInputSchema,
+  ActivitySeriesOutputSchema,
   ActivityStreamsInputSchema,
   AgentManifestInputSchema,
   AgentManifestOutputSchema,
@@ -40,6 +42,15 @@ import { bulletList, formatCollection, makeError, makeResponse } from "../servic
 import { applyPrivacy, normalizeStreams, resolvePrivacyMode } from "../services/privacy.js";
 import { buildDailySummary, buildWeeklySummary, formatSummaryMarkdown } from "../services/summary.js";
 import { buildTrainingContext, formatTrainingContextMarkdown } from "../services/context.js";
+import {
+  SERIES_HARD_MAX_POINTS,
+  STRAVA_STREAM_KEY,
+  buildActivitySeries,
+  pickActivityDurationSeconds,
+  pickActivityMaxHr,
+  pickActivityStartTime,
+  type StravaStreamsPayload
+} from "../services/series.js";
 import { StravaClient } from "../services/strava-client.js";
 import {
   buildProfileSummary,
@@ -383,7 +394,10 @@ export function registerStravaTools(server: McpServer): void {
     "strava_get_activity_streams",
     {
       title: "Get Activity Streams",
-      description: "Get Strava activity streams such as time, distance, heartrate, cadence, watts and altitude. GPS latlng is withheld unless include_gps=true or privacy_mode=raw.",
+      description:
+        "Get raw Strava activity streams (time, distance, heartrate, cadence, watts, altitude). " +
+        "For agent work prefer strava_activity_series — it returns agent-safe-series/v1 with hard point caps and exact stats. " +
+        "GPS latlng is withheld unless include_gps=true or privacy_mode=raw (both require explicit_user_intent=true).",
       inputSchema: ActivityStreamsInputSchema.shape,
       outputSchema: EndpointDataOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -401,6 +415,70 @@ export function registerStravaTools(server: McpServer): void {
         });
         const data = normalizeStreams(raw, privacyMode, params.include_gps);
         return makeResponse({ endpoint, privacy_mode: privacyMode, data }, params.response_format, bulletList("Strava Activity Streams", { endpoint, keys: keys.join(","), privacy_mode: privacyMode, data: JSON.stringify(data) }));
+      } catch (error) {
+        return makeError((error as Error).message);
+      }
+    }
+  );
+
+  server.registerTool(
+    "strava_activity_series",
+    {
+      title: "Strava Activity Series",
+      description:
+        "Bounded time-series for one activity metric (agent-safe-series/v1). " +
+        `Returns exact stats on full-resolution samples plus a downsampled series capped at ${SERIES_HARD_MAX_POINTS} points, ` +
+        "so a multi-hour ride never blows the context window. Prefer strava_get_activity / zones first; reach for this when you need the shape of the effort. " +
+        "GPS is never returned here. Shared contract with garmin_activity_series / Kindred workout_series.",
+      inputSchema: ActivitySeriesInputSchema.shape,
+      outputSchema: ActivitySeriesOutputSchema.shape,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    },
+    async ({ id, metric, resolution_seconds, max_points, reference_max_hr, response_format }) => {
+      try {
+        const api = new StravaClient(getConfig());
+        const streamKey = STRAVA_STREAM_KEY[metric];
+        const streamsEndpoint = `/activities/${id}/streams`;
+        const summaryEndpoint = `/activities/${id}`;
+        // Fetch high-res streams ourselves and shape them — Strava's low/medium
+        // resolution is opaque; we need full samples for honest full-res stats.
+        // Summary feeds duration-anchored coverage + reference_source.
+        const [rawStreams, summary] = await Promise.all([
+          api.get(streamsEndpoint, {
+            keys: ["time", streamKey].join(","),
+            key_by_type: true,
+            resolution: "high"
+          }) as Promise<StravaStreamsPayload>,
+          api.get(summaryEndpoint).catch(() => null) as Promise<Record<string, unknown> | null>
+        ]);
+        const series = buildActivitySeries(rawStreams, {
+          activityId: id,
+          metric,
+          resolutionSeconds: resolution_seconds,
+          maxPoints: max_points,
+          referenceMaxHr: reference_max_hr,
+          nominalDurationSeconds: pickActivityDurationSeconds(summary),
+          activityRecordedMaxHr: pickActivityMaxHr(summary),
+          startTime: pickActivityStartTime(summary)
+        });
+        const zones = series.time_in_zone
+          ? series.time_in_zone.zones.map((zone) => `Z${zone.zone} ${zone.percent}%`).join(", ")
+          : undefined;
+        return makeResponse(series, response_format, bulletList("Strava Activity Series", {
+          activity_id: series.activity_id,
+          metric: `${series.metric} (${series.unit})`,
+          avg: series.stats.avg,
+          min_max: `${series.stats.min}–${series.stats.max}`,
+          percentiles: `p25 ${series.stats.p25} | p50 ${series.stats.p50} | p75 ${series.stats.p75}`,
+          time_in_zone: zones,
+          reference_source: series.time_in_zone?.reference_source,
+          resolution_seconds: series.resolution_seconds,
+          points: `${series.returned_points} returned from ${series.source_points} samples`,
+          downsampled: `${series.downsampled} (${series.method})`,
+          coverage_ratio: series.data_quality.coverage_ratio,
+          coverage_anchor: series.data_quality.coverage_anchor,
+          notes: series.notes.length > 0 ? series.notes.join(" | ") : undefined
+        }));
       } catch (error) {
         return makeError((error as Error).message);
       }

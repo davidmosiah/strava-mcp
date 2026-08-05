@@ -42,8 +42,8 @@ export function buildCapabilities() {
       },
       {
         name: "Activity streams",
-        examples: ["time", "distance", "heartrate", "cadence", "watts", "altitude", "latlng when explicitly allowed"],
-        tools: ["strava_get_activity_streams", "strava_get_activity_zones"]
+        examples: ["bounded agent-safe series", "time", "distance", "heartrate", "cadence", "watts", "altitude", "latlng when explicitly allowed"],
+        tools: ["strava_activity_series", "strava_get_activity_streams", "strava_get_activity_zones"]
       },
       {
         name: "Routes, clubs and gear",
@@ -57,6 +57,7 @@ export function buildCapabilities() {
       "If setup is incomplete, guide the user through setup, auth, and doctor.",
       "Use strava_daily_summary or strava_weekly_summary before low-level activity tools.",
       "Use strava_training_context for a compact recent_training_load handoff to Exercise Catalog or other workout recommenders.",
+      "Prefer strava_activity_series over strava_get_activity_streams for agent context (agent-safe-series/v1, hard point caps).",
       "For Hermes, use direct tools such as mcp_strava_strava_connection_status and reload config with /reload-mcp instead of restarting the gateway.",
       "Treat GPS as sensitive; avoid raw route/latlng payloads unless explicitly requested.",
       "Use Strava for training/load context; pair with WHOOP/Garmin/Oura for recovery and sleep physiology.",
@@ -70,6 +71,7 @@ export function buildCapabilities() {
           "mcp_strava_strava_connection_status",
           "mcp_strava_strava_daily_summary",
           "mcp_strava_strava_weekly_summary",
+          "mcp_strava_strava_activity_series",
           "mcp_strava_strava_get_activity_streams"
         ],
         reload_command: "/reload-mcp",
@@ -79,7 +81,7 @@ export function buildCapabilities() {
     contribution_paths: [
       "Improve setup UX for non-technical athletes.",
       "Add more MCP client examples.",
-      "Add richer stream analytics and route privacy controls.",
+      "Extend agent-safe-series/v1 multi-metric responses and route privacy controls.",
       "Add evaluation fixtures for realistic training questions.",
       "Consider optional write/upload tools only behind explicit opt-in and safety gates."
     ],

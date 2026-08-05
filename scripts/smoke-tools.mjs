@@ -6,7 +6,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const expectedTools = [
-  'strava_agent_manifest', 'strava_cache_status', 'strava_capabilities', 'strava_connection_status',
+  'strava_activity_series', 'strava_agent_manifest', 'strava_cache_status', 'strava_capabilities', 'strava_connection_status',
   'strava_daily_summary', 'strava_data_inventory', 'strava_demo', 'strava_exchange_code',
   'strava_get_activity', 'strava_get_activity_streams', 'strava_get_activity_zones', 'strava_get_athlete',
   'strava_get_athlete_stats', 'strava_get_auth_url', 'strava_get_gear', 'strava_get_route',

@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { DEFAULT_LIMIT, DEFAULT_MAX_PAGES, MAX_PAGES, MAX_STRAVA_LIMIT } from "../constants.js";
 import { AGENT_CLIENTS } from "../services/agent-manifest.js";
+import {
+  SERIES_DEFAULT_MAX_POINTS,
+  SERIES_DEFAULT_RESOLUTION_SECONDS,
+  SERIES_HARD_MAX_POINTS,
+  SERIES_METRICS
+} from "../services/series.js";
 
 export const ResponseFormatSchema = z.enum(["markdown", "json"]).default("markdown");
 export const AgentClientSchema = z.enum(AGENT_CLIENTS).default("generic");
@@ -42,12 +48,79 @@ export const IdInputSchema = z.object({
 export const ActivityStreamsInputSchema = z.object({
   id: z.union([z.string().min(1), z.number().int().positive()]).describe("Strava activity id."),
   keys: z.array(z.enum(["time", "distance", "latlng", "altitude", "velocity_smooth", "heartrate", "cadence", "watts", "temp", "moving", "grade_smooth"])).default(["time", "distance", "heartrate", "cadence", "watts", "altitude"])
-    .describe("Stream keys to request. latlng is withheld unless privacy_mode=raw or include_gps=true."),
+    .describe("Stream keys to request. latlng is withheld unless privacy_mode=raw or include_gps=true. Prefer strava_activity_series for agent-safe bounded series."),
   include_gps: z.boolean().default(false).describe("Allow latlng stream in structured output. Requires explicit_user_intent=true. Raw mode also requires explicit_user_intent=true."),
   resolution: z.enum(["low", "medium", "high"]).optional().describe("Optional Strava stream resolution."),
   privacy_mode: PrivacyModeSchema,
   explicit_user_intent: ExplicitPrivacyIntentSchema,
   response_format: ResponseFormatSchema
+}).strict();
+
+export const ActivitySeriesInputSchema = z.object({
+  id: z.union([z.string().min(1), z.number().int().positive()]).describe("Strava activity id."),
+  metric: z.enum(SERIES_METRICS).default("heart_rate")
+    .describe("Which sample stream to shape. GPS is never available here; use strava_get_activity_streams with include_gps for latlng."),
+  resolution_seconds: z.number().int().min(1).max(3600).default(SERIES_DEFAULT_RESOLUTION_SECONDS)
+    .describe("Requested bucket width. Raised automatically when it would exceed max_points; response reports what was used."),
+  max_points: z.number().int().min(1).max(SERIES_HARD_MAX_POINTS).default(SERIES_DEFAULT_MAX_POINTS)
+    .describe(`Point budget for the returned series. Server hard cap is ${SERIES_HARD_MAX_POINTS}.`),
+  reference_max_hr: z.number().int().min(100).max(240).optional()
+    .describe("Reference max heart rate for zone math (reference_source=caller_provided). Without it, uses activity max_heartrate when available, else series observed max."),
+  response_format: ResponseFormatSchema
+}).strict();
+
+const SeriesPointSchema = z.object({
+  t: z.number().describe("Seconds since activity start."),
+  value: z.number(),
+  min: z.number(),
+  max: z.number(),
+  samples: z.number().int().positive()
+}).strict();
+
+export const ActivitySeriesOutputSchema = z.object({
+  contract_version: z.literal("agent-safe-series/v1"),
+  activity_id: z.union([z.string(), z.number()]),
+  metric: z.enum(SERIES_METRICS),
+  unit: z.string(),
+  start_time: z.string().optional(),
+  t_unit: z.literal("seconds_from_start"),
+  resolution_seconds: z.number(),
+  requested_resolution_seconds: z.number(),
+  points: z.array(SeriesPointSchema),
+  stats: z.object({
+    avg: z.number(),
+    min: z.number(),
+    max: z.number(),
+    p25: z.number(),
+    p50: z.number(),
+    p75: z.number(),
+    percentile_method: z.literal("linear_interpolation")
+  }).strict(),
+  time_in_zone: z.object({
+    zone_model: z.literal("percent_of_reference_max_hr"),
+    reference_max_hr: z.number(),
+    reference_source: z.enum(["caller_provided", "activity_recorded_max", "observed_max"]),
+    zones: z.array(z.object({
+      zone: z.number().int(),
+      min_bpm: z.number(),
+      max_bpm: z.number().nullable(),
+      seconds: z.number(),
+      percent: z.number()
+    }).strict())
+  }).strict().optional(),
+  downsampled: z.boolean(),
+  source_points: z.number().int().nonnegative(),
+  returned_points: z.number().int().nonnegative(),
+  method: z.enum(["time_bucket_mean", "none"]),
+  data_quality: z.object({
+    expected_samples: z.number().int().nonnegative(),
+    actual_samples: z.number().int().nonnegative(),
+    coverage_ratio: z.number().min(0).max(1),
+    longest_gap_seconds: z.number().nonnegative(),
+    sample_interval_seconds: z.number().positive(),
+    coverage_anchor: z.enum(["nominal_duration", "sample_span"])
+  }).strict(),
+  notes: z.array(z.string())
 }).strict();
 
 export const SimpleReadInputSchema = z.object({
@@ -336,6 +409,7 @@ export const TrainingContextOutputSchema = z.object({
 export type CollectionInput = z.infer<typeof CollectionInputSchema>;
 export type IdInput = z.infer<typeof IdInputSchema>;
 export type ActivityStreamsInput = z.infer<typeof ActivityStreamsInputSchema>;
+export type ActivitySeriesInput = z.infer<typeof ActivitySeriesInputSchema>;
 export type SimpleReadInput = z.infer<typeof SimpleReadInputSchema>;
 export type ResponseOnlyInput = z.infer<typeof ResponseOnlyInputSchema>;
 export type AgentManifestInput = z.infer<typeof AgentManifestInputSchema>;
