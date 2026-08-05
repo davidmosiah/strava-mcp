@@ -186,7 +186,7 @@ This package uses the official Strava API v3. When this README says `raw`, it me
 **Activities & streams**
 
 - `strava_list_activities`, `strava_get_activity`, `strava_get_activity_zones`
-- `strava_get_activity_streams` — GPS lat/lng requires `include_gps=true` or `raw` mode
+- `strava_activity_series`, `strava_get_activity_streams` — GPS lat/lng requires `include_gps=true` or `raw` mode
 
 **Routes & context**
 
