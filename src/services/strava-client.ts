@@ -24,7 +24,7 @@ export class StravaClient {
     this.tokenStore = new TokenStore(config.tokenPath);
   }
 
-  authUrl(state?: string, scopes?: string[]): string {
+  authUrl(state?: string, scopes?: string[], codeChallenge?: string): string {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
@@ -33,10 +33,14 @@ export class StravaClient {
       scope: (scopes?.length ? scopes : this.config.scopes).join(",")
     });
     if (state) params.set("state", state);
+    if (codeChallenge) {
+      params.set("code_challenge", codeChallenge);
+      params.set("code_challenge_method", "S256");
+    }
     return `${STRAVA_AUTH_URL}?${params.toString()}`;
   }
 
-  async exchangeCode(input: string): Promise<{ ok: true; token_path: string; scope?: string; expires_at?: number }> {
+  async exchangeCode(input: string, codeVerifier?: string): Promise<{ ok: true; token_path: string; scope?: string; expires_at?: number }> {
     const code = this.extractCode(input);
     const body = new URLSearchParams({
       grant_type: "authorization_code",
@@ -44,6 +48,9 @@ export class StravaClient {
       client_id: this.config.clientId,
       client_secret: this.config.clientSecret
     });
+    if (codeVerifier) {
+      body.set("code_verifier", codeVerifier);
+    }
 
     const tokens = await this.requestTokens(body);
     const redirectScope = this.extractScope(input);
@@ -216,8 +223,13 @@ export class StravaClient {
         client_secret: this.config.clientSecret
       });
       const refreshed = await this.requestTokens(body);
-      await this.tokenStore.write({ ...current, ...refreshed });
-      return { ...current, ...refreshed };
+      const merged = {
+        ...current,
+        ...refreshed,
+        refresh_token: refreshed.refresh_token ?? current.refresh_token
+      };
+      await this.tokenStore.write(merged);
+      return merged;
     });
   }
 
