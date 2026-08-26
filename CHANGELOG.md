@@ -1,3 +1,10 @@
+## 0.6.3 - 2026-08-26
+
+### Security
+
+- Preserve existing refresh token when the provider omits it on refresh (stop clobbering with `undefined`).
+- OAuth authorization now uses PKCE S256 and 128-bit state.
+
 ## 0.6.0 - 2026-08-05
 
 ### Added

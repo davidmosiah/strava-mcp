@@ -1,6 +1,6 @@
 {
   "name": "strava-mcp-unofficial",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Unofficial local-first Strava MCP server for AI training and performance agents.",
   "type": "module",
   "bin": {
