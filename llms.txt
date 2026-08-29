@@ -15,3 +15,6 @@ MCP command: strava-mcp-server
 - Prefer JSON responses for automation and markdown responses for human summaries.
 - Tokens stay local under ~/.strava-mcp/tokens.json (or equivalent) and should never be printed.
 - Not medical advice. Use as trend context only — outputs are operational context, not medical, legal or financial advice.
+
+Skill (same gates, no MCP client required): skill/SKILL.md
+npx -y strava-mcp-unofficial call <tool> --json '{...}'
