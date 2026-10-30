@@ -1,7 +1,7 @@
 import { URL, URLSearchParams } from "node:url";
 import { DEFAULT_LIMIT, MAX_STRAVA_LIMIT, STRAVA_API_BASE_URL, STRAVA_AUTH_URL, STRAVA_DEAUTH_URL, STRAVA_TOKEN_URL } from "../constants.js";
 import type { StravaConfig, StravaTokenSet } from "../types.js";
-import { disabledCacheStatus, StravaCache, type CacheStatus } from "./cache.js";
+import { disabledCacheStatus, type CacheStatus } from "./cache.js";
 import { fetchWithCache, getCacheStats } from "./http-cache.js";
 import { fetchWithRetry as fetchWithRetryMiddleware } from "./http-retry.js";
 import { redactErrorMessage } from "./redaction.js";
@@ -18,7 +18,6 @@ export interface ListParams {
 
 export class StravaClient {
   private readonly tokenStore: TokenStore;
-  private cache?: StravaCache;
 
   constructor(private readonly config: StravaConfig) {
     this.tokenStore = new TokenStore(config.tokenPath);
@@ -93,8 +92,8 @@ export class StravaClient {
       default_ttl_seconds: 60,
       bypass_env_var: "STRAVA_NO_CACHE"
     };
-    if (!this.config.cacheEnabled) return { ...disabledCacheStatus(this.config.cachePath), http_cache };
-    return { ...this.getCache().status(), http_cache };
+    // Authenticated responses are never cached, so the SQLite cache stays off even when configured.
+    return { ...disabledCacheStatus(this.config.cachePath), http_cache };
   }
 
   async list(path: string, params: ListParams = {}): Promise<{ records: unknown[]; next_page?: number; pages_fetched: number }> {
@@ -269,11 +268,6 @@ export class StravaClient {
       throw new Error(`Strava API HTTP ${response.status}: ${redactErrorMessage(details || response.statusText)}`);
     }
     return payload ?? {};
-  }
-
-  private getCache(): StravaCache {
-    this.cache ??= new StravaCache(this.config.cachePath);
-    return this.cache;
   }
 
   private async fetchWithRetry(url: string, init: RequestInit): Promise<Response> {

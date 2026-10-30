@@ -10,10 +10,6 @@ function parsePrivacyMode(value: string | undefined): PrivacyMode {
   return "structured";
 }
 
-function parseBool(value: string | undefined): boolean {
-  return Boolean(value && ["1", "true", "yes", "on", "sqlite"].includes(value.toLowerCase()));
-}
-
 export function buildPrivacyAudit(): Record<string, unknown> {
   const requiredEnv = ["STRAVA_CLIENT_ID", "STRAVA_CLIENT_SECRET", "STRAVA_REDIRECT_URI"];
   const sources = loadConfigSources();
@@ -28,7 +24,7 @@ export function buildPrivacyAudit(): Record<string, unknown> {
     privacy_mode_default: parsePrivacyMode(value("STRAVA_PRIVACY_MODE")),
     raw_payloads_opt_in: true,
     gps_redaction_default: true,
-    cache_enabled: parseBool(value("STRAVA_CACHE")),
+    cache_enabled: false,
     cache_path: value("STRAVA_CACHE_PATH") ?? join(homedir(), ".strava-mcp", "cache.sqlite"),
     token_path: value("STRAVA_TOKEN_PATH") ?? join(homedir(), ".strava-mcp", "tokens.json"),
     stdout_safe: true,
@@ -36,6 +32,7 @@ export function buildPrivacyAudit(): Record<string, unknown> {
     required_env_present: Object.fromEntries(requiredEnv.map((name) => [name, Boolean(value(name as keyof typeof sources.values))])),
     redacted_key_patterns: REDACTED_KEY_PATTERNS,
     notes: [
+      "Authenticated Strava responses are never cached; STRAVA_CACHE is accepted but has no effect.",
       "This is an unofficial Strava integration.",
       "OAuth tokens are stored locally and are not returned by tools.",
       "Raw Strava payloads require STRAVA_PRIVACY_MODE=raw or privacy_mode=raw.",
