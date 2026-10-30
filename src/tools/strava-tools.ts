@@ -517,7 +517,7 @@ export function registerStravaTools(server: McpServer): void {
 
   server.registerTool("strava_cache_status", {
     title: "Strava Cache Status",
-    description: "Show optional local SQLite cache status. Enable with STRAVA_CACHE=sqlite or STRAVA_CACHE=true.",
+    description: "Show local cache status. Authenticated Strava responses are never cached, so STRAVA_CACHE has no effect and the SQLite cache stays off.",
     inputSchema: ResponseOnlyInputSchema.shape,
     outputSchema: CacheStatusOutputSchema.shape,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
