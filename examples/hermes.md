@@ -17,7 +17,7 @@ mcp_servers:
     command: npx
     args:
       - -y
-      - strava-mcp-unofficial@0.1.2
+      - strava-mcp-unofficial@0.7.0
 
 approvals:
   mcp_reload_confirm: false

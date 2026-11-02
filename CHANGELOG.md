@@ -1,9 +1,18 @@
-## Unreleased security hardening
+## 0.7.0 - 2026-11-02
+
+### Security and compatibility
+
+- Release the merged input, profile-storage and local-only HTTP hardening. Unsafe remote HTTP bindings, invalid/oversized profile values, profile symlinks, compressed requests and excessive tool arguments are rejected.
+- Authenticated responses are not served from the legacy cross-account cache. Existing cache files are not automatically removed.
+- This pre-1.0 minor release includes compatibility restrictions; see [the migration guide](docs/migration-0.7.0.md).
+- Align package, server and runtime release metadata; expand the existing CI matrix to Node.js 20/22/24 without changing permissions.
+
+### Previously unreleased changes
 
 - Update the MCP SDK, Zod and pinned transitive dependencies to patched versions; regenerate the npm lockfile without install scripts.
 - Limit tool arguments to 10,000 elements across both transports and reject compressed HTTP bodies; retain the 1 MiB JSON limit. Add synthetic regression coverage.
 
-## Unreleased
+### Previously unreleased changes
 
 ### Security
 
