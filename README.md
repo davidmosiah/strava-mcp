@@ -243,7 +243,7 @@ STRAVA_REDIRECT_URI=http://127.0.0.1:3000/callback
 # Optional
 STRAVA_SCOPES="read activity:read_all profile:read_all"
 STRAVA_PRIVACY_MODE=structured        # summary | structured | raw
-STRAVA_CACHE=sqlite                   # optional read-through cache
+STRAVA_CACHE=sqlite                   # no effect: authenticated responses are never cached
 ```
 
 ## Hermes / remote setup

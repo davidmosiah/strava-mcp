@@ -126,7 +126,7 @@ export async function buildConnectionStatus(options: ConnectionStatusOptions = {
     token,
     oauth,
     cache: {
-      enabled: parseBool(value("STRAVA_CACHE")),
+      enabled: false,
       path: cachePath
     },
     client_checks: clientChecks,
@@ -145,10 +145,6 @@ function effectiveStatus(input: { missingEnv: string[]; token: ConnectionStatus[
 function parsePrivacyMode(value: string | undefined): PrivacyMode {
   if (value === "summary" || value === "structured" || value === "raw") return value;
   return "structured";
-}
-
-function parseBool(value: string | undefined): boolean {
-  return Boolean(value && ["1", "true", "yes", "on", "sqlite"].includes(value.toLowerCase()));
 }
 
 function isLocalHttpRedirect(value: string): boolean {

@@ -1,3 +1,9 @@
+## Unreleased
+
+### Security
+
+- Authenticated Strava responses are no longer stored in or served from the HTTP or SQLite cache, which was keyed only by method and URL and could return one account's data to another. `STRAVA_CACHE` is still accepted but has no effect, and cache status, connection status and the privacy audit now report the cache as off. Delete `~/.strava-mcp/cache.sqlite` to remove entries written by earlier versions.
+
 ## 0.6.4 - 2026-08-29
 
 Skill layer ships in-package (`skill/SKILL.md`). Agents can use MCP tools **or** `call <tool> --json` on the same binary; mutation gates stay identical.
