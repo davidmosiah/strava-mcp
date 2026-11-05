@@ -1,0 +1,28 @@
+# Strava — Agent Plugins package
+
+Portable [Agent Plugins](https://agent-plugins.org/) v1 package for
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) and other Agent Plugins clients:
+the `strava` MCP server (`strava-mcp-unofficial@0.6.4` over stdio) plus the `strava-mcp` workflow skill.
+
+## Install (Hermes Agent)
+
+```bash
+hermes plugins install davidmosiah/strava-mcp/agent-plugin --no-enable
+hermes plugins enable strava-mcp
+```
+
+Requires Node.js 20+ (`npx` on PATH). The skill loads as `strava-mcp:strava-mcp`.
+
+## Connector setup
+
+```bash
+npx -y strava-mcp-unofficial@0.6.4 setup --client generic
+npx -y strava-mcp-unofficial@0.6.4 auth
+npx -y strava-mcp-unofficial@0.6.4 doctor
+```
+
+`setup` asks for the Strava developer app client ID and secret and saves them locally (`--client generic` because this plugin already registers the server with Hermes); `auth` opens the Strava consent page in the browser and stores the OAuth tokens under `~/.strava-mcp/` with 0600 permissions; `doctor` confirms readiness.
+
+## Disclosure
+
+Runs the `strava-mcp-unofficial@0.6.4` npm package locally over stdio through `npx` (Node.js 20+ required); the package is downloaded from npm on first start. Data source: the official Strava API v3. Credentials and OAuth tokens are created by the connector's own `setup`/`auth` commands in the user's terminal and stay on the machine (`~/.strava-mcp/`); the plugin declares no environment variables and reads no Hermes credentials. Tools that change state: strava_profile_update (local profile only); strava_exchange_code (stores OAuth tokens locally); strava_revoke_access (revokes the Strava grant and deletes local tokens). The tool set comes from the pinned npm version, not from this repository's source tree.
