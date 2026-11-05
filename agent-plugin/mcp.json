@@ -6,7 +6,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "strava-mcp-unofficial@0.6.4"
+        "strava-mcp-unofficial@0.7.0"
       ],
       "cwd": "${PLUGIN_DATA}"
     }

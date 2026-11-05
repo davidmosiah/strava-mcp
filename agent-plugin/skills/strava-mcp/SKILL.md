@@ -6,7 +6,7 @@ description: >-
 
 # Strava
 
-MCP server `strava` from the `strava-mcp-unofficial@0.6.4` npm package, run locally through `npx`. It reads activities, laps, segments, athlete stats and training load. Data source: the official Strava API v3.
+MCP server `strava` from the `strava-mcp-unofficial@0.7.0` npm package, run locally through `npx`. It reads activities, laps, segments, athlete stats and training load. Data source: the official Strava API v3.
 
 ## Workflow
 
@@ -17,9 +17,9 @@ MCP server `strava` from the `strava-mcp-unofficial@0.6.4` npm package, run loca
 ## Setup (the user runs this in a terminal, not in chat)
 
 ```bash
-npx -y strava-mcp-unofficial@0.6.4 setup --client generic
-npx -y strava-mcp-unofficial@0.6.4 auth
-npx -y strava-mcp-unofficial@0.6.4 doctor
+npx -y strava-mcp-unofficial@0.7.0 setup --client generic
+npx -y strava-mcp-unofficial@0.7.0 auth
+npx -y strava-mcp-unofficial@0.7.0 doctor
 ```
 
 `setup` asks for the Strava developer app client ID and secret and saves them locally (`--client generic` because this plugin already registers the server with Hermes); `auth` opens the Strava consent page in the browser and stores the OAuth tokens under `~/.strava-mcp/` with 0600 permissions; `doctor` confirms readiness.

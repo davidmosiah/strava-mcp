@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "strava-mcp",
-  "version": "0.6.4",
+  "version": "0.7.0",
   "description": "Read the user's Strava activities, segments and training load through the local strava MCP server.",
   "author": {
     "name": "David Mosiah",
