@@ -10,12 +10,13 @@ export function makeResponse<T>(data: T, format: ResponseFormat, markdown: strin
   };
 }
 
-export function makeError(message: string): ToolResponse<{ error: string }> {
+export function makeError(message: string): ToolResponse<never> {
   const safeMessage = redactErrorMessage(message);
   return {
     isError: true,
-    content: [{ type: "text", text: `Error: ${safeMessage}` }],
-    structuredContent: { error: safeMessage }
+    // Error payloads do not satisfy the tool's success-only outputSchema.
+    // Keep the MCP error flag and redacted text, as the SDK does for tool errors.
+    content: [{ type: "text", text: `Error: ${safeMessage}` }]
   };
 }
 
