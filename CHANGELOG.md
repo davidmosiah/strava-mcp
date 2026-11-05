@@ -1,3 +1,7 @@
+## Unreleased
+
+- Return MCP tool failures as `isError: true` with redacted text and no `structuredContent`, so strict clients do not validate error objects against success-only output schemas. Consumers must inspect `isError` and error text instead of `structuredContent.error`. Success schemas/payloads and authorization gates are unchanged. CLI errors retain their `{ "error": "..." }` JSON representation and nonzero exit status.
+
 ## 0.7.0 - 2026-11-02
 
 ### Security and compatibility

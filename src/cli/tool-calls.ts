@@ -48,7 +48,11 @@ export async function runToolCall(args: string[]): Promise<number> {
     input = JSON.parse(raw) as Record<string, unknown>;
   }
   const result = await fn(input);
-  const payload = result.structuredContent ?? result.content ?? result;
+  // Preserve the CLI's { error } JSON shape for text-only MCP errors.
+  const errorText = result.isError && result.content?.length === 1 && result.content[0]?.type === "text"
+    ? result.content[0].text : undefined;
+  const payload = result.structuredContent ?? (errorText?.startsWith("Error: ")
+    ? { error: errorText.slice("Error: ".length) } : result.content ?? result);
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
   return result.isError ? 1 : 0;
 }
