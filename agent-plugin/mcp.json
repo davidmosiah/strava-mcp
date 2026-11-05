@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "strava": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "strava-mcp-unofficial@0.6.4"
+      ],
+      "cwd": "${PLUGIN_DATA}"
+    }
+  }
+}
