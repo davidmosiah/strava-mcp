@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { StravaIdStringSchema } from "../schemas/common.js";
 
 const TimezoneArg = z.string().default("UTC").describe("IANA timezone for interpreting daily/weekly summaries.");
 
@@ -52,9 +53,9 @@ Requirements:
     {
       title: "Strava Activity Stream Investigator",
       description: "Investigate one Strava activity with agent-safe series (prefer series over raw streams) while respecting GPS privacy.",
-      argsSchema: { activity_id: z.string().describe("Strava activity id"), include_gps: z.string().default("false") }
+      argsSchema: { activity_id: StravaIdStringSchema.describe("Exact Strava activity ID as a string"), include_gps: z.string().default("false") }
     },
-    ({ activity_id, include_gps }) => userPrompt(`Call strava_get_activity with id=${activity_id} and response_format=json. Then call strava_activity_series with id=${activity_id}, metric=heart_rate, response_format=json (agent-safe-series/v1 — exact stats + bounded points). Only call strava_get_activity_streams if you need multi-key raw streams; set include_gps=${include_gps === "true" ? "true" : "false"} and only with explicit user consent for GPS.
+    ({ activity_id, include_gps }) => userPrompt(`Call strava_get_activity with id="${activity_id}" and response_format=json. Then call strava_activity_series with id="${activity_id}", metric=heart_rate, response_format=json (agent-safe-series/v1 — exact stats + bounded points). Only call strava_get_activity_streams if you need multi-key raw streams; set include_gps=${include_gps === "true" ? "true" : "false"} and only with explicit user consent for GPS.
 
 Return:
 - what the session appears to be training

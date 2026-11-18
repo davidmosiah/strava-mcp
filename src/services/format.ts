@@ -1,5 +1,6 @@
 import type { ResponseFormat, ToolResponse } from "../types.js";
 import { redactErrorMessage, redactSensitive } from "./redaction.js";
+import { stravaIdFields } from "./strava-id.js";
 
 export function makeResponse<T>(data: T, format: ResponseFormat, markdown: string): ToolResponse<T> {
   const safeData = redactSensitive(data) as T;
@@ -37,10 +38,10 @@ export function formatCollection(title: string, records: unknown[], meta: Record
   for (const [index, record] of preview.entries()) {
     if (record && typeof record === "object") {
       const object = record as Record<string, unknown>;
-      const id = object.id ?? object.id_str ?? `item-${index + 1}`;
+      const { id, id_str } = stravaIdFields(object);
       const start = object.start_date ?? object.start_date_local ?? object.created_at ?? object.updated_at ?? "n/a";
       const sport = object.sport_type ?? object.type ?? "n/a";
-      lines.push(`## ${String(id)}`);
+      lines.push(`## ${id_str ?? id ?? `item-${index + 1}`}`);
       if (object.name) lines.push(`- **name**: ${String(object.name)}`);
       lines.push(`- **start/created**: ${String(start)}`);
       lines.push(`- **sport/type**: ${String(sport)}`);

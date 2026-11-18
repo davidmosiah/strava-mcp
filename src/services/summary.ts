@@ -1,4 +1,5 @@
 import type { StravaClient } from "./strava-client.js";
+import { stravaIdFields } from "./strava-id.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_S = 60 * 60;
@@ -153,7 +154,7 @@ export async function buildDailySummary(client: Pick<StravaClient, "list">, opti
       note: "Strava provides activity/training data, not WHOOP-style recovery or sleep readiness. Pair with WHOOP/Garmin/Oura for physiology."
     },
     latest_activity: latest ? {
-      id: latest.id,
+      ...stravaIdFields(latest),
       name: latest.name,
       sport_type: sport(latest),
       start_date: str(latest, ["start_date", "start_date_local"]),

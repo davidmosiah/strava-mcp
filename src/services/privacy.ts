@@ -1,4 +1,5 @@
 import type { PrivacyMode, StravaConfig } from "../types.js";
+import { stravaIdFields } from "./strava-id.js";
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -65,7 +66,7 @@ export function normalizeRecord(endpoint: string, record: unknown, mode: Privacy
   if (endpoint.includes("/routes")) return normalizeRoute(record, mode);
   if (endpoint.includes("/clubs")) return normalizeClub(record, mode);
   if (endpoint.includes("/gear/")) return normalizeGear(record, mode);
-  return mode === "summary" ? pickDefined({ id: record.id, name: record.name }) : removeGps(record);
+  return mode === "summary" ? pickDefined({ ...stravaIdFields(record), name: record.name }) : removeGps(record);
 }
 
 export function normalizeStreams(payload: unknown, mode: PrivacyMode, includeGps: boolean): unknown {
@@ -86,7 +87,7 @@ export function normalizeStreams(payload: unknown, mode: PrivacyMode, includeGps
 
 function normalizeAthlete(record: Record<string, unknown>, mode: PrivacyMode): Record<string, unknown> {
   const base = pickDefined({
-    id: record.id,
+    ...stravaIdFields(record),
     username: record.username,
     firstname: record.firstname,
     city: mode === "summary" ? undefined : record.city,
@@ -112,7 +113,7 @@ function normalizeAthlete(record: Record<string, unknown>, mode: PrivacyMode): R
 
 function normalizeActivity(record: Record<string, unknown>, mode: PrivacyMode): Record<string, unknown> {
   const base = pickDefined({
-    id: record.id,
+    ...stravaIdFields(record),
     name: record.name,
     sport_type: first(record, ["sport_type", "type"]),
     start_date: record.start_date,
@@ -157,8 +158,7 @@ function normalizeActivity(record: Record<string, unknown>, mode: PrivacyMode): 
 
 function normalizeRoute(record: Record<string, unknown>, mode: PrivacyMode): Record<string, unknown> {
   const base = pickDefined({
-    id: record.id,
-    id_str: record.id_str,
+    ...stravaIdFields(record),
     name: record.name,
     description: record.description,
     distance: record.distance,
@@ -180,13 +180,13 @@ function normalizeRoute(record: Record<string, unknown>, mode: PrivacyMode): Rec
 }
 
 function normalizeClub(record: Record<string, unknown>, mode: PrivacyMode): Record<string, unknown> {
-  const base = pickDefined({ id: record.id, name: record.name, sport_type: record.sport_type, member_count: record.member_count, private: record.private });
+  const base = pickDefined({ ...stravaIdFields(record), name: record.name, sport_type: record.sport_type, member_count: record.member_count, private: record.private });
   if (mode === "summary") return base;
   return mergeStructured(record, { ...base, city: record.city, state: record.state, country: record.country, verified: record.verified, url: record.url });
 }
 
 function normalizeGear(record: Record<string, unknown>, mode: PrivacyMode): Record<string, unknown> {
-  const base = pickDefined({ id: record.id, name: record.name, distance: record.distance, primary: record.primary });
+  const base = pickDefined({ ...stravaIdFields(record), name: record.name, distance: record.distance, primary: record.primary });
   if (mode === "summary") return base;
   return mergeStructured(record, { ...base, brand_name: record.brand_name, model_name: record.model_name, description: record.description, retired: record.retired });
 }
@@ -196,7 +196,8 @@ function removeGps(record: Record<string, unknown>): Record<string, unknown> {
 }
 
 function mergeStructured(record: Record<string, unknown>, normalized: Record<string, unknown>): Record<string, unknown> {
-  return pickDefined({ ...normalized, ...removeGps(record) });
+  const safeRecord = removeGps(record);
+  return pickDefined({ ...normalized, ...safeRecord, ...stravaIdFields(safeRecord) });
 }
 
 function sanitizeValue(value: unknown): unknown {

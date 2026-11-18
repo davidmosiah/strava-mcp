@@ -25,6 +25,7 @@ import {
   ResponseOnlyInputSchema,
   RevokeAccessOutputSchema,
   SimpleReadInputSchema,
+  StravaIdSchema,
   SummaryOutputSchema,
   TrainingContextInputSchema,
   TrainingContextOutputSchema,
@@ -52,6 +53,7 @@ import {
   type StravaStreamsPayload
 } from "../services/series.js";
 import { StravaClient } from "../services/strava-client.js";
+import { stravaIdFields } from "../services/strava-id.js";
 import {
   buildProfileSummary,
   getOnboardingFlow,
@@ -65,10 +67,20 @@ function client(): StravaClient {
   return new StravaClient(getConfig());
 }
 
-async function athleteId(api: StravaClient): Promise<string | number> {
-  const athlete = await api.get("/athlete") as { id?: string | number };
-  if (!athlete.id) throw new Error("Authenticated Strava athlete id was not returned. Re-authorize and try again.");
-  return athlete.id;
+function idPathSegment(id: unknown): string {
+  // The CLI calls tool handlers directly, without MCP schema validation.
+  const parsed = StravaIdSchema.safeParse(id);
+  if (!parsed.success) {
+    throw new Error("Invalid Strava ID. Pass the exact id_str as a string or use a positive safe integer.");
+  }
+  return String(parsed.data);
+}
+
+async function athleteId(api: StravaClient): Promise<string> {
+  const athlete = await api.get("/athlete") as Record<string, unknown>;
+  const { id, id_str } = stravaIdFields(athlete);
+  if (id === undefined) throw new Error("Strava did not return an exact authenticated athlete ID.");
+  return idPathSegment(id_str ?? id);
 }
 
 function registerCollectionTool(server: McpServer, name: string, title: string, endpoint: string | ((api: StravaClient) => Promise<string>), description: string): void {
@@ -97,7 +109,7 @@ function registerCollectionTool(server: McpServer, name: string, title: string, 
   );
 }
 
-function registerGetByIdTool(server: McpServer, name: string, title: string, endpointBuilder: (id: string | number) => string, description: string): void {
+function registerGetByIdTool(server: McpServer, name: string, title: string, endpointBuilder: (id: string) => string, description: string): void {
   server.registerTool(
     name,
     {
@@ -109,9 +121,9 @@ function registerGetByIdTool(server: McpServer, name: string, title: string, end
     },
     async (params) => {
       try {
+        const endpoint = endpointBuilder(idPathSegment(params.id));
         const config = getConfig();
         const privacyMode = resolvePrivacyMode(config, params.privacy_mode, { explicit_user_intent: (params as { explicit_user_intent?: boolean }).explicit_user_intent, include_gps: (params as { include_gps?: boolean }).include_gps });
-        const endpoint = endpointBuilder(params.id);
         const data = applyPrivacy(endpoint, await new StravaClient(config).get(endpoint), privacyMode);
         return makeResponse({ endpoint, privacy_mode: privacyMode, data }, params.response_format, bulletList(title, { endpoint, privacy_mode: privacyMode, data: JSON.stringify(data) }));
       } catch (error) {
@@ -404,10 +416,10 @@ export function registerStravaTools(server: McpServer): void {
     },
     async (params) => {
       try {
+        const endpoint = `/activities/${idPathSegment(params.id)}/streams`;
         const config = getConfig();
         const privacyMode = resolvePrivacyMode(config, params.privacy_mode, { explicit_user_intent: (params as { explicit_user_intent?: boolean }).explicit_user_intent, include_gps: (params as { include_gps?: boolean }).include_gps });
         const keys = params.keys.filter((key) => key !== "latlng" || params.include_gps || privacyMode === "raw");
-        const endpoint = `/activities/${params.id}/streams`;
         const raw = await new StravaClient(config).get(endpoint, {
           keys: keys.join(","),
           key_by_type: true,
@@ -436,10 +448,11 @@ export function registerStravaTools(server: McpServer): void {
     },
     async ({ id, metric, resolution_seconds, max_points, reference_max_hr, response_format }) => {
       try {
+        const segment = idPathSegment(id);
         const api = new StravaClient(getConfig());
         const streamKey = STRAVA_STREAM_KEY[metric];
-        const streamsEndpoint = `/activities/${id}/streams`;
-        const summaryEndpoint = `/activities/${id}`;
+        const summaryEndpoint = `/activities/${segment}`;
+        const streamsEndpoint = `${summaryEndpoint}/streams`;
         // Fetch high-res streams ourselves and shape them — Strava's low/medium
         // resolution is opaque; we need full samples for honest full-res stats.
         // Summary feeds duration-anchored coverage + reference_source.
