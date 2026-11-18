@@ -5,6 +5,7 @@ import { disabledCacheStatus, type CacheStatus } from "./cache.js";
 import { fetchWithCache, getCacheStats } from "./http-cache.js";
 import { fetchWithRetry as fetchWithRetryMiddleware } from "./http-retry.js";
 import { redactErrorMessage } from "./redaction.js";
+import { parseStravaJson } from "./strava-id.js";
 import { TokenStore } from "./token-store.js";
 
 export interface ListParams {
@@ -298,8 +299,9 @@ function cleanParams(input: Record<string, string | number | boolean | undefined
 
 function safeJson(text: string): unknown {
   try {
-    return JSON.parse(text);
-  } catch {
-    return text;
+    return parseStravaJson(text);
+  } catch (error) {
+    if (error instanceof SyntaxError) return text;
+    throw error;
   }
 }

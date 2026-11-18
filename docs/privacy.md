@@ -16,7 +16,7 @@ The file is written with user-only permissions where supported.
 
 - `summary`: minimal activity/training fields. GPS/map fields removed.
 - `structured`: normalized activity fields for analysis. Raw GPS geometry limited.
-- `raw`: upstream Strava API payload. Use only when explicitly needed.
+- `raw`: upstream Strava API payload, with large integer IDs represented as exact strings. Use only when explicitly needed.
 
 ## GPS Boundary
 

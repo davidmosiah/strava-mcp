@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DEFAULT_LIMIT, DEFAULT_MAX_PAGES, MAX_PAGES, MAX_STRAVA_LIMIT } from "../constants.js";
 import { AGENT_CLIENTS } from "../services/agent-manifest.js";
+import { STRAVA_ID_PATH_PATTERN } from "../services/strava-id.js";
 import {
   SERIES_DEFAULT_MAX_POINTS,
   SERIES_DEFAULT_RESOLUTION_SECONDS,
@@ -38,15 +39,19 @@ export const CollectionInputSchema = z.object({
   response_format: ResponseFormatSchema
 }).strict();
 
+export const StravaIdStringSchema = z.string().regex(STRAVA_ID_PATH_PATTERN);
+export const StravaIdSchema = z.union([StravaIdStringSchema, z.number().int().positive()])
+  .describe("Strava resource ID. Prefer the exact id_str as a string. Numeric IDs must be positive safe integers.");
+
 export const IdInputSchema = z.object({
-  id: z.union([z.string().min(1), z.number().int().positive()]).describe("Strava resource id."),
+  id: StravaIdSchema,
   privacy_mode: PrivacyModeSchema,
   explicit_user_intent: ExplicitPrivacyIntentSchema,
   response_format: ResponseFormatSchema
 }).strict();
 
 export const ActivityStreamsInputSchema = z.object({
-  id: z.union([z.string().min(1), z.number().int().positive()]).describe("Strava activity id."),
+  id: StravaIdSchema,
   keys: z.array(z.enum(["time", "distance", "latlng", "altitude", "velocity_smooth", "heartrate", "cadence", "watts", "temp", "moving", "grade_smooth"])).default(["time", "distance", "heartrate", "cadence", "watts", "altitude"])
     .describe("Stream keys to request. latlng is withheld unless privacy_mode=raw or include_gps=true. Prefer strava_activity_series for agent-safe bounded series."),
   include_gps: z.boolean().default(false).describe("Allow latlng stream in structured output. Requires explicit_user_intent=true. Raw mode also requires explicit_user_intent=true."),
@@ -57,7 +62,7 @@ export const ActivityStreamsInputSchema = z.object({
 }).strict();
 
 export const ActivitySeriesInputSchema = z.object({
-  id: z.union([z.string().min(1), z.number().int().positive()]).describe("Strava activity id."),
+  id: StravaIdSchema,
   metric: z.enum(SERIES_METRICS).default("heart_rate")
     .describe("Which sample stream to shape. GPS is never available here; use strava_get_activity_streams with include_gps for latlng."),
   resolution_seconds: z.number().int().min(1).max(3600).default(SERIES_DEFAULT_RESOLUTION_SECONDS)
@@ -79,7 +84,7 @@ const SeriesPointSchema = z.object({
 
 export const ActivitySeriesOutputSchema = z.object({
   contract_version: z.literal("agent-safe-series/v1"),
-  activity_id: z.union([z.string(), z.number()]),
+  activity_id: StravaIdSchema,
   metric: z.enum(SERIES_METRICS),
   unit: z.string(),
   start_time: z.string().optional(),

@@ -168,6 +168,8 @@ Don't expose GPS unless I explicitly ask for it.
 
 This package uses the official Strava API v3. When this README says `raw`, it means the upstream Strava JSON for a supported endpoint — not continuous device telemetry.
 
+Pass `id_str` as a quoted string when calling a tool that takes an ID, for example `{"id":"9007199254740993"}`. When Strava sends a large ID as a decimal JSON integer, the connector preserves it as a string in `id`, including in raw mode. Safe numeric IDs and string gear IDs such as `"g123"` remain supported. If an unsafe ID arrives without an exact decimal representation, the connector omits the unusable numeric field. Calls with unsafe numeric IDs as arguments are rejected.
+
 | Data | Available | Notes |
 |---|:---:|---|
 | Activities (runs, rides, swims, walks, workouts) | ✓ | All recorded activities |
